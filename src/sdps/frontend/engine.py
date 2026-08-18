@@ -1,34 +1,34 @@
 import pygame
+from sdps.config import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from sdps.frontend.floor import Floor
 
 class Engine:
-    # Add basic pygame engine (https://www.pygame.org/docs/tut/tom_games2.html#makegames-2)
     def __init__(self):
-        # Initialise screen
         pygame.init()
-        screen = pygame.display.set_mode((150, 50))
-        pygame.display.set_caption('Basic Pygame program')
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.clock = pygame.time.Clock()
+        self.running = True
+        
+        self.background = pygame.Surface(self.screen.get_size())
+        pygame.display.set_caption('Summer Dance Party School')
 
-        # Fill background
-        background = pygame.Surface(screen.get_size())
-        background = background.convert()
-        background.fill((250, 250, 250))
+        self._init_scene_()
 
-        # Display some text
-        font = pygame.font.Font(None, 36)
-        text = font.render("Hello There", 1, (10, 10, 10))
-        textpos = text.get_rect()
-        textpos.centerx = background.get_rect().centerx
-        background.blit(text, textpos)
+    def _init_scene_(self):
+        self.background = self.background.convert()
+        self.background.fill((0, 0, 0))
+        self.floor = Floor(self.screen.get_width(), self.screen.get_height() / 3, self.screen.get_height() - self.screen.get_height() / 3)
 
-        # Blit everything to the screen
-        screen.blit(background, (0, 0))
-        pygame.display.flip()
-
-        # Event loop
-        while True:
+    def run(self):
+        while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    return
+                    self.running = False
 
-            screen.blit(background, (0, 0))
+            self.screen.blit(self.background, (0, 0))
+            self.floor.draw(self.screen)
+
             pygame.display.flip()
+            self.clock.tick(FPS)
+
+        pygame.quit()
