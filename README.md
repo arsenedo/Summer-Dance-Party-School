@@ -1,4 +1,10 @@
 # Summer Dance Party School
+## Installation
+
+```
+uv venv --python 3.11
+uv pip install -e . 
+```
 
 ## File Structure
 This project follows the Python "src-layout" convention and separate frontend from backend
