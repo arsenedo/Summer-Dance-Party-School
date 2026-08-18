@@ -1,6 +1,7 @@
 import pygame
 
 from sdps.config import CURTAINS_TIME, FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from sdps.frontend.components.entities.spotlight_rig import SpotlightRig
 from sdps.frontend.components.scene.curtains import Curtains
 from sdps.frontend.components.scene.floor import Floor
 from sdps.frontend.components.shape import Shape
@@ -39,6 +40,9 @@ class Engine:
             self.shape.draw_rectangle(100, 100, 200, 150, (0, 255, 0))
             self.shape.draw_circle(300, 300, 50, (0, 0, 255))
             self.shape.draw_triangle((400, 250), (450, 300), (350, 300), (255, 255, 0))
+
+            self.spotlight_rig = SpotlightRig(self.screen, self.screen.get_width(), 20)
+            self.spotlight_rig.draw(20)
 
             elapsed_ms = pygame.time.get_ticks() - start_ticks
             if elapsed_ms < CURTAINS_TIME * 1000:
