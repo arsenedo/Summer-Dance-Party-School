@@ -7,3 +7,14 @@ CURTAINS_COLOR = (255, 0, 0)
 CURTAINS_TIME = 2 # seconds
 
 SPOTLIGHT_COLOR = (125, 125, 125)
+SPOTLIGHT_COLORS = [
+    (255, 0, 0),
+    (255, 128, 0),
+    (255, 255, 0),
+    (0, 255, 0),
+    (0, 128, 255),
+    (0, 0, 255),
+    (148, 0, 211),
+]
+SPOTLIGHT_ALPHA = 100
+SPOTLIGHT_LIGHT_HALF_WIDTH = 200

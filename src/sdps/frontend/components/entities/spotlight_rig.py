@@ -1,14 +1,23 @@
-from sdps.config import SPOTLIGHT_COLOR
+from sdps.config import SPOTLIGHT_COLOR, SPOTLIGHT_COLORS
 from sdps.frontend.components.entities.spotlight import Spotlight
 from sdps.frontend.components.shape import Shape
 
 N_SPOTLIGHTS = 7
 
 class SpotlightRig:
-    def __init__(self, display, width, height):
+    def __init__(self, display, width, height, light_end_y):
+        """initialize a spotlight rig
+
+        Args:
+            display: display surface
+            width: width of the rig
+            height: height of the rig
+            light_end_y: y-coordinate of the light end
+        """
         self.display = display
         self.width = width
         self.height = height
+        self.light_end_y = light_end_y
         self.spotlights = self._build_spotlights()
 
     def _build_spotlights(self):
@@ -17,7 +26,8 @@ class SpotlightRig:
         spotlights = []
         for i in range(N_SPOTLIGHTS):
             c_x = x + spacing * (i + 0.5)
-            spotlight = Spotlight(self.display, c_x, self.height, 30, 45)
+            spotlight = Spotlight(self.display, c_x, self.height, 30, 45,
+                                  SPOTLIGHT_COLORS[i], self.light_end_y)
             spotlights.append(spotlight)
         return spotlights
 
