@@ -36,3 +36,24 @@ class Shape:
 
     def draw_triangle(self, p1: Point, p2: Point, p3: Point, color):
         pygame.draw.polygon(self.display, color, [p1, p2, p3])
+
+    # https://stackoverflow.com/questions/6339057/draw-transparent-rectangles-and-polygons-in-pygame
+    def draw_triangle_alpha(self, p1, p2, p3, color, alpha):
+        points = [p1, p2, p3]
+
+        # we search a surface that only covers the triangle
+        min_x = min(p[0] for p in points)
+        max_x = max(p[0] for p in points)
+        min_y = min(p[1] for p in points)
+        max_y = max(p[1] for p in points)
+
+        surface = pygame.Surface((max_x - min_x, max_y - min_y), pygame.SRCALPHA)
+        pygame.draw.polygon(
+            surface,
+            (color[0], color[1], color[2], alpha),
+            [(p[0] - min_x, p[1] - min_y) for p in points],
+        )
+        self.display.blit(surface, (min_x, min_y))
+
+    def draw_triangle_on(self, surface, p1, p2, p3, color):
+        pygame.draw.polygon(surface, color, [p1, p2, p3])
