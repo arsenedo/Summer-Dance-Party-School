@@ -37,6 +37,19 @@ class Shape:
     def draw_triangle(self, p1: Point, p2: Point, p3: Point, color):
         pygame.draw.polygon(self.display, color, [p1, p2, p3])
 
+    # https://stackoverflow.com/questions/36510795/rotating-a-rectangle-not-image-in-pygame
+    def draw_rotated_rectangle(self, x, y, width, height, angle_deg, color):
+        radius = math.sqrt((height / 2) ** 2 + (width / 2) ** 2)
+        angle = math.atan2(height / 2, width / 2)
+        angles = [angle, -angle + math.pi, angle + math.pi, -angle]
+        rot_radians = (math.pi / 180) * angle_deg
+        points = []
+        for a in angles:
+            y_offset = -1 * radius * math.sin(a + rot_radians)
+            x_offset = radius * math.cos(a + rot_radians)
+            points.append((x + x_offset, y + y_offset))
+        pygame.draw.polygon(self.display, color, points)
+
     # https://stackoverflow.com/questions/6339057/draw-transparent-rectangles-and-polygons-in-pygame
     def draw_triangle_alpha(self, p1, p2, p3, color, alpha):
         points = [p1, p2, p3]
