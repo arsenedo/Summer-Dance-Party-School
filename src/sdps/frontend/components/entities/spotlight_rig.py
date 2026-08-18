@@ -1,4 +1,5 @@
 from sdps.config import SPOTLIGHT_COLOR
+from sdps.frontend.components.entities.spotlight import Spotlight
 from sdps.frontend.components.shape import Shape
 
 N_SPOTLIGHTS = 7
@@ -8,17 +9,25 @@ class SpotlightRig:
         self.display = display
         self.width = width
         self.height = height
+        self.spotlights = self._build_spotlights()
+
+    def _build_spotlights(self):
+        x = self.display.get_width() / 2 - self.width / 2
+        spacing = self.width / N_SPOTLIGHTS
+        spotlights = []
+        for i in range(N_SPOTLIGHTS):
+            c_x = x + spacing * (i + 0.5)
+            spotlight = Spotlight(self.display, c_x, self.height, 30, 45)
+            spotlights.append(spotlight)
+        return spotlights
+
+    def toggle(self, i):
+        self.spotlights[i].toggle()
 
     def draw(self, y):
         x = self.display.get_width() / 2 - self.width / 2
         shape = Shape(self.display)
         shape.draw_rectangle(x, y, self.width, self.height, SPOTLIGHT_COLOR)
 
-        spacing = self.width / N_SPOTLIGHTS
-        w = 30
-        h = 45
-        for i in range(N_SPOTLIGHTS):
-            c_x = x + spacing * (i + 0.5)
-            rect_x = c_x - w / 2
-            rect_y = y + self.height
-            shape.draw_rectangle(rect_x, rect_y, w, h, SPOTLIGHT_COLOR)
+        for spotlight in self.spotlights:
+            spotlight.draw(y)

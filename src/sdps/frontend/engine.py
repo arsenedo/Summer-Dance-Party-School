@@ -26,6 +26,7 @@ class Engine:
         self.floor = Floor(self.screen.get_width(), self.screen.get_height() / 3,
                             self.screen.get_height() - self.screen.get_height() / 3)
         self.curtains = Curtains(self.screen.get_height())
+        self.spotlight_rig = SpotlightRig(self.screen, self.screen.get_width(), 20)
 
     def run(self):
         start_ticks = pygame.time.get_ticks()
@@ -34,6 +35,11 @@ class Engine:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                elif event.type == pygame.KEYDOWN:
+                    key = event.key
+                    if pygame.K_1 <= key <= pygame.K_7:
+                        i = key - pygame.K_1
+                        self.spotlight_rig.toggle(i)
 
             self.screen.blit(self.background, (0, 0))
             self.floor.draw(self.screen)
@@ -41,7 +47,6 @@ class Engine:
             self.shape.draw_circle(300, 300, 50, (0, 0, 255))
             self.shape.draw_triangle((400, 250), (450, 300), (350, 300), (255, 255, 0))
 
-            self.spotlight_rig = SpotlightRig(self.screen, self.screen.get_width(), 20)
             self.spotlight_rig.draw(20)
 
             elapsed_ms = pygame.time.get_ticks() - start_ticks
