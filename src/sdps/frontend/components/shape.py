@@ -54,3 +54,6 @@ class Shape:
             [(p[0] - min_x, p[1] - min_y) for p in points],
         )
         self.display.blit(surface, (min_x, min_y))
+
+    def draw_triangle_on(self, surface, p1, p2, p3, color):
+        pygame.draw.polygon(surface, color, [p1, p2, p3])

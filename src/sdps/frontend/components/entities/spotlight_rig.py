@@ -34,6 +34,13 @@ class SpotlightRig:
     def toggle(self, i):
         self.spotlights[i].toggle()
 
+    def apply_darkness(self, surface, y):
+        shape = Shape(self.display)
+        for spotlight in self.spotlights:
+            if spotlight.is_on:
+                light_coord, end_light_left, end_light_right = spotlight.beam_points(y)
+                shape.draw_triangle_on(surface, light_coord, end_light_left, end_light_right, (0, 0, 0, 0))
+
     def draw(self, y):
         x = self.display.get_width() / 2 - self.width / 2
         shape = Shape(self.display)

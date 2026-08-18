@@ -1,6 +1,6 @@
 import pygame
 
-from sdps.config import CURTAINS_TIME, FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from sdps.config import CURTAINS_TIME, DARKNESS_ALPHA, FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 from sdps.frontend.components.entities.spotlight_rig import SpotlightRig
 from sdps.frontend.components.scene.curtains import Curtains
 from sdps.frontend.components.scene.floor import Floor
@@ -28,6 +28,7 @@ class Engine:
         self.curtains = Curtains(self.screen.get_height())
         self.spotlight_rig = SpotlightRig(self.screen, self.screen.get_width(), 20,
                                           self.floor.y_offset + self.floor.height / 2)
+        self.darkness = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
 
     def run(self):
         start_ticks = pygame.time.get_ticks()
@@ -45,6 +46,10 @@ class Engine:
             self.screen.blit(self.background, (0, 0))
             self.floor.draw(self.screen)
             self.spotlight_rig.draw(20)
+
+            self.darkness.fill((0, 0, 0, DARKNESS_ALPHA))
+            self.spotlight_rig.apply_darkness(self.darkness, 20)
+            self.screen.blit(self.darkness, (0, 0))
 
             elapsed_ms = pygame.time.get_ticks() - start_ticks
             if elapsed_ms < CURTAINS_TIME * 1000:
