@@ -17,9 +17,9 @@ class Engine:
         self.curtains_speed = (SCREEN_WIDTH / 2) / (CURTAINS_TIME * 1000)
         pygame.display.set_caption('Summer Dance Party School')
 
-        self._init_scene_()
+        self._init_scene()
 
-    def _init_scene_(self):
+    def _init_scene(self):
         self.background = self.background.convert()
         self.background.fill((0, 0, 0))
         self.floor = Floor(self.screen.get_width(), self.screen.get_height() / 3,
