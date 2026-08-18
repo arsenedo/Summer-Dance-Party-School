@@ -1,6 +1,5 @@
-import pygame
-
 from sdps.config import FLOOR_COLOR
+from sdps.frontend.components.shape import Shape
 
 
 class Floor:
@@ -10,5 +9,5 @@ class Floor:
         self.y_offset = y_offset
 
     def draw(self, display):
-        pygame.draw.rect(display, FLOOR_COLOR, (0, self.y_offset, self.width,
-                                                 self.height))
+        shape = Shape(display)
+        shape.draw_rectangle(0, self.y_offset, self.width, self.height, FLOOR_COLOR)

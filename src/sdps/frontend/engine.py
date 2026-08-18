@@ -1,8 +1,8 @@
 import pygame
 
 from sdps.config import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
-from sdps.frontend.curtains import Curtains
-from sdps.frontend.floor import Floor
+from sdps.frontend.components.scene.curtains import Curtains
+from sdps.frontend.components.scene.floor import Floor
 from sdps.frontend.components.shape import Shape
 
 
