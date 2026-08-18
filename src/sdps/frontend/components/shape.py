@@ -1,0 +1,38 @@
+import math
+
+import pygame
+from pygame.draw_py import Point
+
+
+class Shape:
+    def __init__(self, display, n_triangles=20):
+        """Generate shapes with triangles
+
+        Args:
+            display: surface to draw on
+            n_triangles (int, optional): More triangles -> cleaner circle.
+                                         Defaults to 20.
+        """
+        self.display = display
+        self.n_triangles = n_triangles
+
+    def draw_rectangle(self, x, y, w, h, color=(255, 0, 0)):
+        pygame.draw.polygon(self.display, color, [(x, y),
+                                                  (x + w, y),
+                                                  (x, y + h)])
+        pygame.draw.polygon(self.display, color, [(x + w, y + h),
+                                                 (x + w, y),
+                                                 (x, y + h)])
+
+    def draw_circle(self, x, y, r, color):
+        for i in range(self.n_triangles):
+            theta1 = (2 * math.pi * i) / self.n_triangles
+            theta2 = (2 * math.pi * (i + 1)) / self.n_triangles
+            x1 = x + r * math.cos(theta1)
+            y1 = y + r * math.sin(theta1)
+            x2 = x + r * math.cos(theta2)
+            y2 = y + r * math.sin(theta2)
+            pygame.draw.polygon(self.display, color, [(x, y), (x1, y1), (x2, y2)])
+
+    def draw_triangle(self, p1: Point, p2: Point, p3: Point, color):
+        pygame.draw.polygon(self.display, color, [p1, p2, p3])
