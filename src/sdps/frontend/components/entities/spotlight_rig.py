@@ -5,7 +5,7 @@ from sdps.frontend.components.shape import Shape
 N_SPOTLIGHTS = 7
 
 class SpotlightRig:
-    def __init__(self, display, width, height, light_end_y):
+    def __init__(self, display, y, width, height, light_end_y):
         """initialize a spotlight rig
 
         Args:
@@ -15,6 +15,7 @@ class SpotlightRig:
             light_end_y: y-coordinate of the light end
         """
         self.display = display
+        self.y = y
         self.width = width
         self.height = height
         self.light_end_y = light_end_y
@@ -34,17 +35,18 @@ class SpotlightRig:
     def toggle(self, i):
         self.spotlights[i].toggle()
 
-    def apply_darkness(self, surface, y):
+    def apply_darkness(self, surface):
         shape = Shape(self.display)
         for spotlight in self.spotlights:
             if spotlight.is_on:
-                light_coord, end_light_left, end_light_right = spotlight.beam_points(y)
-                shape.draw_triangle_on(surface, light_coord, end_light_left, end_light_right, (0, 0, 0, 0))
+                light_coord, end_light_left, end_light_right = spotlight.light_points(self.y)
+                shape.draw_triangle_on(surface, light_coord, end_light_left,
+                                       end_light_right, (0, 0, 0, 0))
 
-    def draw(self, y):
+    def draw(self):
         x = self.display.get_width() / 2 - self.width / 2
         shape = Shape(self.display)
-        shape.draw_rectangle(x, y, self.width, self.height, SPOTLIGHT_COLOR)
+        shape.draw_rectangle(x, self.y, self.width, self.height, SPOTLIGHT_COLOR)
 
         for spotlight in self.spotlights:
-            spotlight.draw(y)
+            spotlight.draw(self.y)

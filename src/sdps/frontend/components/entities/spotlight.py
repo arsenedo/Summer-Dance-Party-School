@@ -13,7 +13,7 @@ class Spotlight:
         self.light_end_y = light_end_y
         self.is_on = False
 
-    def beam_points(self, bar_y):
+    def light_points(self, bar_y):
         y = bar_y + self.y_offset
         light_coord = (self.x, y + self.height)
         end_light_left = (self.x - SPOTLIGHT_LIGHT_HALF_WIDTH, self.light_end_y)
@@ -25,8 +25,9 @@ class Spotlight:
         x = self.x - self.width / 2
         y = bar_y + self.y_offset
         if self.is_on:
-            light_coord, end_light_left, end_light_right = self.beam_points(bar_y)
-            shape.draw_triangle_alpha(light_coord, end_light_left, end_light_right, self.color, SPOTLIGHT_ALPHA)
+            light_coord, end_light_left, end_light_right = self.light_points(bar_y)
+            shape.draw_triangle_alpha(light_coord, end_light_left, end_light_right,
+                                       self.color, SPOTLIGHT_ALPHA)
         shape.draw_rectangle(x, y, self.width, self.height, SPOTLIGHT_COLOR)
 
     def toggle(self):

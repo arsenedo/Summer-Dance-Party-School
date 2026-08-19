@@ -46,7 +46,7 @@ class Engine:
         self.floor = Floor(self.screen.get_width(), self.screen.get_height() / 3,
                             self.screen.get_height() - self.screen.get_height() / 3)
         self.curtains = Curtains(self.screen.get_height())
-        self.spotlight_rig = SpotlightRig(self.screen, self.screen.get_width(), 20,
+        self.spotlight_rig = SpotlightRig(self.screen, 20, self.screen.get_width(), 20,
                                           self.floor.y_offset + self.floor.height / 2)
         self.darkness = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         self.left_cannon = ConfettiCannon(self.screen, CONFETTI_PADDING_POS,
@@ -80,15 +80,14 @@ class Engine:
                              - self.right_cannon.barrel_length / 2)
                         self._shoot_confetti(1000, (x, y), -1)
                 elif event.type == self.floating_particle_timer:
-                    #self._spawn_floating_particle()
-                    pass
+                    self._spawn_floating_particle()
 
             self.screen.blit(self.background, (0, 0))
             self.floor.draw(self.screen)
-            self.spotlight_rig.draw(20)
+            self.spotlight_rig.draw()
 
             self.darkness.fill((0, 0, 0, DARKNESS_ALPHA))
-            self.spotlight_rig.apply_darkness(self.darkness, 20)
+            self.spotlight_rig.apply_darkness(self.darkness)
             self.screen.blit(self.darkness, (0, 0))
             self.left_cannon.draw()
             self.right_cannon.draw()
@@ -131,9 +130,14 @@ class Engine:
             Particle(self.particle_group, pos, color, direction, speed)
 
     def _spawn_floating_particle(self):
-        init_pos = pygame.mouse.get_pos()
-        pos = init_pos[0] + randint(-10, 10), init_pos[1] + randint(-10, 10)
-        color = "white"
-        direction = pygame.math.Vector2(0, -1)
-        speed = randint(50, 100)
-        FloatingParticle(self.particle_group, pos, color, direction, speed)
+        spotlights = self.spotlight_rig.spotlights
+        for spotlight in spotlights:
+            if spotlight.is_on and random.randint(0, 100) > 99:
+                init_pos = (spotlight.x,
+                            self.spotlight_rig.y * 2 + spotlight.y_offset
+                            + spotlight.height)
+                pos = init_pos[0] + randint(-10, 10), init_pos[1] + randint(-10, 10)
+                color = "white"
+                direction = pygame.math.Vector2(0, 1)
+                speed = randint(50, 100)
+                FloatingParticle(self.particle_group, pos, color, direction, speed)

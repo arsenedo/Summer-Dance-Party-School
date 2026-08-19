@@ -70,3 +70,21 @@ class FloatingParticle(Particle):
                  direction: pygame.math.Vector2,
                  speed: int):
         super().__init__(groups, pos, color, direction, speed)
+        self.ttl = 1000
+        self.elapsed_time = 0
+        self.alpha = 1
+        self.image.set_alpha(self.alpha)
+
+    def fade(self, dt):
+            if self.elapsed_time < self.ttl / 2:
+                self.alpha += self.fade_speed * dt
+            else:
+                self.alpha -= self.fade_speed * dt
+            self.image.set_alpha(self.alpha)
+
+    def update(self, dt):
+            self.move(dt)
+            self.fade(dt)
+            self.check_pos()
+            self.check_alpha()
+            self.elapsed_time += dt * 1000
