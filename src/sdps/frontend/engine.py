@@ -140,4 +140,5 @@ class Engine:
                 color = "white"
                 direction = pygame.math.Vector2(0, 1)
                 speed = randint(50, 100)
-                FloatingParticle(self.particle_group, pos, color, direction, speed)
+                particle = FloatingParticle(self.particle_group, pos, color, direction, speed)
+                spotlight.particles_group.add(particle)
