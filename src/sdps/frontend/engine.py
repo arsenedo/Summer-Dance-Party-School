@@ -1,4 +1,5 @@
-from random import choice, randint, uniform
+import random
+from random import choice, randint
 
 import pygame
 
@@ -69,13 +70,15 @@ class Engine:
                     elif key == pygame.K_q:
                         self.left_cannon.shoot()
                         x = self.left_cannon.x + self.left_cannon.body_size / 2
-                        y = self.left_cannon.y - self.left_cannon.body_size - self.left_cannon.barrel_length / 2
-                        self._spawn_particles(1000, (x, y), 1)
+                        y = (self.left_cannon.y - self.left_cannon.body_size
+                             - self.left_cannon.barrel_length / 2)
+                        self._shoot_confetti(1000, (x, y), 1)
                     elif key == pygame.K_w:
                         self.right_cannon.shoot()
                         x = self.right_cannon.x - self.right_cannon.body_size / 2
-                        y = self.right_cannon.y - self.right_cannon.body_size - self.right_cannon.barrel_length / 2
-                        self._spawn_particles(1000, (x, y), -1)
+                        y = (self.right_cannon.y - self.right_cannon.body_size
+                             - self.right_cannon.barrel_length / 2)
+                        self._shoot_confetti(1000, (x, y), -1)
                 elif event.type == self.floating_particle_timer:
                     #self._spawn_floating_particle()
                     pass
@@ -111,19 +114,20 @@ class Engine:
 
         pygame.quit()
 
-    def _spawn_particles(self, n: int, pos: tuple[int, int], side: int):
-        """spawn particles for confettis
+    def _shoot_confetti(self, n: int, pos: tuple[int, int], side: int):
+        """shoot confettis from a position
 
         Args:
-            n (int): bumber of particles to spawn
+            n (int): number of particles to spawn
             pos (tuple[int, int]): position to spawn particles
             side (int): direction to throw particles (-1: to the left, 1: to the right)
         """
         for _ in range(n):
             color = choice(("red", "green", "blue"))
-            direction = pygame.math.Vector2(uniform(side, 0), uniform(-1, 0))
-            # direction = direction.normalize()
-            speed = randint(1, 1500)
+            direction = pygame.math.Vector2(random.gauss(side, 0.25),
+                                            random.gauss(-1, 0.25))
+            direction = direction.normalize()
+            speed = random.gauss(1200, 300)
             Particle(self.particle_group, pos, color, direction, speed)
 
     def _spawn_floating_particle(self):

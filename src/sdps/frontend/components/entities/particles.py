@@ -1,7 +1,5 @@
 # With the help of this tutorial: https://www.youtube.com/watch?v=ZiPWN39mGM0
 
-from random import randint
-
 import pygame
 
 from sdps.config import SCREEN_HEIGHT, SCREEN_WIDTH
@@ -22,6 +20,8 @@ class Particle(pygame.sprite.Sprite):
         self.alpha = 255
         self.fade_speed = 200
         self.size = 4
+        self.velocity_vector = self.direction * self.speed
+        self.gravity = 1000
 
         self.create_surf()
 
@@ -33,7 +33,8 @@ class Particle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.pos)
 
     def move(self, dt):
-        self.pos += self.direction * self.speed * dt
+        self.velocity_vector.y += self.gravity * dt
+        self.pos += self.velocity_vector * dt
         self.rect.center = self.pos
 
     def fade(self, dt):
