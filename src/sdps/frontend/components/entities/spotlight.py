@@ -1,3 +1,5 @@
+import pygame
+
 from sdps.config import SPOTLIGHT_ALPHA, SPOTLIGHT_LIGHT_HALF_WIDTH, SPOTLIGHT_COLOR
 from sdps.frontend.components.shape import Shape
 
@@ -12,6 +14,7 @@ class Spotlight:
         self.color = color
         self.light_end_y = light_end_y
         self.is_on = False
+        self.particles_group = pygame.sprite.Group()
 
     def light_points(self, bar_y):
         y = bar_y + self.y_offset
@@ -32,3 +35,6 @@ class Spotlight:
 
     def toggle(self):
         self.is_on = not self.is_on
+        if not self.is_on:
+            for particle in self.particles_group.sprites():
+                particle.kill()
