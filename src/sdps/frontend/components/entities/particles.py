@@ -3,6 +3,7 @@
 import pygame
 
 from sdps.config import SCREEN_HEIGHT, SCREEN_WIDTH
+from sdps.frontend.components.shape import Shape
 
 
 class Particle(pygame.sprite.Sprite):
@@ -28,8 +29,8 @@ class Particle(pygame.sprite.Sprite):
     def create_surf(self):
         self.image = pygame.Surface((self.size, self.size)).convert_alpha()
         self.image.set_colorkey("black")
-        pygame.draw.circle(surface=self.image, color=self.color,
-                           center=(self.size / 2, self.size / 2), radius=self.size / 2)
+        Shape(self.image).draw_circle(self.size / 2, self.size / 2, self.size / 2,
+                                      self.color)
         self.rect = self.image.get_rect(center=self.pos)
 
     def move(self, dt):
