@@ -6,12 +6,17 @@ import pygame
 from sdps.config import (
     CONFETTI_PADDING_POS,
     CURTAINS_TIME,
+    DANCER_COLORS,
+    DANCER_X_PADDING,
+    DANCER_Y_PADDING,
     DARKNESS_ALPHA,
     FPS,
+    MAX_DANCERS,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
 from sdps.frontend.components.entities.confetti_cannon import ConfettiCannon
+from sdps.frontend.components.entities.dancer import Dancer
 from sdps.frontend.components.entities.particles import (
     FloatingParticle,
     Particle,
@@ -33,6 +38,7 @@ class Engine:
         self.curtains_speed = (SCREEN_WIDTH / 2) / (CURTAINS_TIME * 1000)
 
         self.particle_group = pygame.sprite.Group()
+        self.dancer_group = pygame.sprite.Group()
         self.floating_particle_timer = pygame.event.custom_type()
         pygame.time.set_timer(self.floating_particle_timer, 10)
 
@@ -79,12 +85,15 @@ class Engine:
                         y = (self.right_cannon.y - self.right_cannon.body_size
                              - self.right_cannon.barrel_length / 2)
                         self._shoot_confetti(1000, (x, y), -1)
+                    elif key == pygame.K_SPACE:
+                        self._spawn_dancer()
                 elif event.type == self.floating_particle_timer:
                     self._spawn_floating_particle()
 
             self.screen.blit(self.background, (0, 0))
             self.floor.draw(self.screen)
             self.spotlight_rig.draw()
+            self.dancer_group.draw(self.screen)
 
             self.darkness.fill((0, 0, 0, DARKNESS_ALPHA))
             self.spotlight_rig.apply_darkness(self.darkness)
@@ -107,11 +116,23 @@ class Engine:
 
             self.particle_group.draw(self.screen)
             self.particle_group.update(dt)
+            self.dancer_group.update(dt)
 
             pygame.display.flip()
             self.clock.tick(FPS)
 
         pygame.quit()
+
+    def _spawn_dancer(self):
+        if len(self.dancer_group) >= MAX_DANCERS:
+            self.dancer_group.sprites()[0].kill()
+
+        x = randint(DANCER_X_PADDING, SCREEN_WIDTH - DANCER_X_PADDING)
+        floor_top = self.floor.y_offset + DANCER_Y_PADDING
+        floor_bottom = SCREEN_HEIGHT - DANCER_Y_PADDING
+        y = randint(floor_top, floor_bottom)
+        color = choice(DANCER_COLORS)
+        Dancer(self.dancer_group, (x, y), color)
 
     def _shoot_confetti(self, n: int, pos: tuple[int, int], side: int):
         """shoot confettis from a position
