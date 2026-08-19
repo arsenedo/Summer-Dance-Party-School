@@ -130,15 +130,14 @@ class Engine:
             Particle(self.particle_group, pos, color, direction, speed)
 
     def _spawn_floating_particle(self):
-        if random.randint(0, 100) > 99:
-            spotlights = self.spotlight_rig.spotlights
-            for spotlight in spotlights:
-                if spotlight.is_on:
-                    init_pos = (spotlight.x,
-                                self.spotlight_rig.y * 2 + spotlight.y_offset
-                                + spotlight.height)
-                    pos = init_pos[0] + randint(-10, 10), init_pos[1] + randint(-10, 10)
-                    color = "white"
-                    direction = pygame.math.Vector2(0, 1)
-                    speed = randint(50, 100)
-                    FloatingParticle(self.particle_group, pos, color, direction, speed)
+        spotlights = self.spotlight_rig.spotlights
+        for spotlight in spotlights:
+            if spotlight.is_on and random.randint(0, 100) > 99:
+                init_pos = (spotlight.x,
+                            self.spotlight_rig.y * 2 + spotlight.y_offset
+                            + spotlight.height)
+                pos = init_pos[0] + randint(-10, 10), init_pos[1] + randint(-10, 10)
+                color = "white"
+                direction = pygame.math.Vector2(0, 1)
+                speed = randint(50, 100)
+                FloatingParticle(self.particle_group, pos, color, direction, speed)

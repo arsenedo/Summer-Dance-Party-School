@@ -88,4 +88,3 @@ class FloatingParticle(Particle):
             self.check_pos()
             self.check_alpha()
             self.elapsed_time += dt * 1000
-            print(self.elapsed_time)
