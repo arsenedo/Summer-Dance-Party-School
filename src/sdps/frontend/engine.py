@@ -46,7 +46,7 @@ class Engine:
         self.floor = Floor(self.screen.get_width(), self.screen.get_height() / 3,
                             self.screen.get_height() - self.screen.get_height() / 3)
         self.curtains = Curtains(self.screen.get_height())
-        self.spotlight_rig = SpotlightRig(self.screen, self.screen.get_width(), 20,
+        self.spotlight_rig = SpotlightRig(self.screen, 20, self.screen.get_width(), 20,
                                           self.floor.y_offset + self.floor.height / 2)
         self.darkness = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         self.left_cannon = ConfettiCannon(self.screen, CONFETTI_PADDING_POS,
@@ -84,10 +84,10 @@ class Engine:
 
             self.screen.blit(self.background, (0, 0))
             self.floor.draw(self.screen)
-            self.spotlight_rig.draw(20)
+            self.spotlight_rig.draw()
 
             self.darkness.fill((0, 0, 0, DARKNESS_ALPHA))
-            self.spotlight_rig.apply_darkness(self.darkness, 20)
+            self.spotlight_rig.apply_darkness(self.darkness)
             self.screen.blit(self.darkness, (0, 0))
             self.left_cannon.draw()
             self.right_cannon.draw()
@@ -134,7 +134,9 @@ class Engine:
             spotlights = self.spotlight_rig.spotlights
             for spotlight in spotlights:
                 if spotlight.is_on:
-                    init_pos = spotlight.x, 50 + spotlight.y_offset + spotlight.height
+                    init_pos = (spotlight.x,
+                                self.spotlight_rig.y * 2 + spotlight.y_offset
+                                + spotlight.height)
                     pos = init_pos[0] + randint(-10, 10), init_pos[1] + randint(-10, 10)
                     color = "white"
                     direction = pygame.math.Vector2(0, 1)
