@@ -80,8 +80,7 @@ class Engine:
                              - self.right_cannon.barrel_length / 2)
                         self._shoot_confetti(1000, (x, y), -1)
                 elif event.type == self.floating_particle_timer:
-                    #self._spawn_floating_particle()
-                    pass
+                    self._spawn_floating_particle()
 
             self.screen.blit(self.background, (0, 0))
             self.floor.draw(self.screen)
@@ -131,9 +130,13 @@ class Engine:
             Particle(self.particle_group, pos, color, direction, speed)
 
     def _spawn_floating_particle(self):
-        init_pos = pygame.mouse.get_pos()
-        pos = init_pos[0] + randint(-10, 10), init_pos[1] + randint(-10, 10)
-        color = "white"
-        direction = pygame.math.Vector2(0, -1)
-        speed = randint(50, 100)
-        FloatingParticle(self.particle_group, pos, color, direction, speed)
+        if random.randint(0, 100) > 99:
+            spotlights = self.spotlight_rig.spotlights
+            for spotlight in spotlights:
+                if spotlight.is_on:
+                    init_pos = spotlight.x, 50 + spotlight.y_offset + spotlight.height
+                    pos = init_pos[0] + randint(-10, 10), init_pos[1] + randint(-10, 10)
+                    color = "white"
+                    direction = pygame.math.Vector2(0, 1)
+                    speed = randint(50, 100)
+                    FloatingParticle(self.particle_group, pos, color, direction, speed)
