@@ -15,7 +15,10 @@ from sdps.config import (
     SCREEN_WIDTH,
 )
 from sdps.frontend.components.entities.confetti_cannon import ConfettiCannon
-from sdps.frontend.components.entities.dancer.generator import generate_dancer
+from sdps.frontend.components.entities.dancer.generator import (
+    generate_dance,
+    generate_dancer,
+)
 from sdps.frontend.components.entities.particles import (
     FloatingParticle,
     Particle,
@@ -86,6 +89,8 @@ class Engine:
                         self._shoot_confetti(1000, (x, y), -1)
                     elif key == pygame.K_SPACE:
                         self._spawn_dancer()
+                    elif key == pygame.K_a:
+                        self._start_dance()
                 elif event.type == self.floating_particle_timer:
                     self._spawn_floating_particle()
 
@@ -131,6 +136,11 @@ class Engine:
         floor_bottom = SCREEN_HEIGHT - DANCER_Y_PADDING
         y = randint(floor_top, floor_bottom)
         generate_dancer(self.dancer_group, (x, y))
+
+    def _start_dance(self):
+        dance = generate_dance()
+        for dancer in self.dancer_group:
+            dancer.start_dance(dance)
 
     def _shoot_confetti(self, n: int, pos: tuple[int, int], side: int):
         """shoot confettis from a position
