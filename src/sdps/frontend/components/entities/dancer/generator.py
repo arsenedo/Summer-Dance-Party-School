@@ -8,6 +8,7 @@ from sdps.frontend.components.entities.dancer.clothing import (
     Top,
     TopType,
 )
+from sdps.frontend.components.entities.dancer.dance import DANCES
 from sdps.frontend.components.entities.dancer.dancer import Dancer
 from sdps.frontend.components.entities.dancer.skin import Skin
 
@@ -76,3 +77,7 @@ def generate_skin():
 
 def generate_dancer(groups, pos):
     return Dancer(groups, pos, generate_skin())
+
+
+def generate_dance():
+    return random.choice(DANCES)
