@@ -9,19 +9,15 @@ from sdps.config import (
     DANCER_LEG_LENGTH,
     DANCER_LEG_WIDTH,
 )
-from sdps.frontend.components.entities.bodypart import BodyPart
+from sdps.frontend.components.entities.dancer.bodypart import BodyPart
 
 
 class Dancer(pygame.sprite.Sprite):
-    def __init__(
-        self,
-        groups,
-        pos,
-        color,
-    ):
+    def __init__(self, groups, pos, skin):
         super().__init__(groups)
         self.pos = pos
-        self.color = color
+        self.skin = skin
+        self.color = skin.body_color
 
         self.body = None
         self.head = None
@@ -40,16 +36,33 @@ class Dancer(pygame.sprite.Sprite):
         arm_gap = DANCER_BODY_WIDTH / 2
 
         self.body = BodyPart(
-            DANCER_BODY_WIDTH, DANCER_BODY_LENGTH, self.color, (x, y), -1
+            DANCER_BODY_WIDTH,
+            DANCER_BODY_LENGTH,
+            self.color,
+            (x, y),
+            -1,
+            clothing=self.skin.top,
         )
         self.head = BodyPart(
             DANCER_HEAD_SIZE, DANCER_HEAD_SIZE, self.color, (x, body_top), -1
         )
         self.leg_left = BodyPart(
-            DANCER_LEG_WIDTH, DANCER_LEG_LENGTH, self.color, (x - leg_gap, y), 1
+            DANCER_LEG_WIDTH,
+            DANCER_LEG_LENGTH,
+            self.color,
+            (x - leg_gap, y),
+            1,
+            clothing=self.skin.pants,
+            footwear=self.skin.shoes,
         )
         self.leg_right = BodyPart(
-            DANCER_LEG_WIDTH, DANCER_LEG_LENGTH, self.color, (x + leg_gap, y), 1
+            DANCER_LEG_WIDTH,
+            DANCER_LEG_LENGTH,
+            self.color,
+            (x + leg_gap, y),
+            1,
+            clothing=self.skin.pants,
+            footwear=self.skin.shoes,
         )
         self.arm_left = BodyPart(
             DANCER_ARM_WIDTH, DANCER_ARM_LENGTH, self.color, (x - arm_gap, body_top), 1
@@ -69,33 +82,24 @@ class Dancer(pygame.sprite.Sprite):
         ]
 
     def render(self):
-        corners = []
+        xs = []
+        ys = []
         for part in self._parts():
             for point in part.corners():
-                corners.append(point)
+                xs.append(point[0])
+                ys.append(point[1])
 
-        min_x = 9999
-        max_x = -9999
-        min_y = 9999
-        max_y = -9999
+        margin = max(DANCER_LEG_LENGTH, DANCER_ARM_LENGTH, DANCER_BODY_LENGTH)
 
-        for point in corners:
-            x = point[0]
-            y = point[1]
+        min_x = min(xs) - margin
+        max_x = max(xs) + margin
+        min_y = min(ys) - margin
+        max_y = max(ys) + margin
 
-            if x < min_x:
-                min_x = x
-            if x > max_x:
-                max_x = x
+        width = max(1, int(max_x - min_x))
+        height = max(1, int(max_y - min_y))
 
-            if y < min_y:
-                min_y = y
-            if y > max_y:
-                max_y = y
-
-        width = max_x - min_x
-        height = max_y - min_y
         self.image = pygame.Surface((width, height), pygame.SRCALPHA)
         for part in self._parts():
             part.draw(self.image, offset=(-min_x, -min_y))
-        self.rect = self.image.get_rect(topleft=(min_x, min_y))
+        self.rect = self.image.get_rect(topleft=(int(min_x), int(min_y)))

@@ -1,6 +1,6 @@
-from .bodypart import BodyPart
+from .dancer.bodypart import BodyPart
 from .confetti_cannon import ConfettiCannon
-from .dancer import Dancer
+from .dancer.dancer import Dancer
 from .particles import FloatingParticle, Particle
 from .spotlight import Spotlight
 from .spotlight_rig import SpotlightRig
