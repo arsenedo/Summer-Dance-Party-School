@@ -17,12 +17,10 @@ class Shape:
         self.n_triangles = n_triangles
 
     def draw_rectangle(self, x, y, w, h, color=(255, 0, 0)):
-        pygame.draw.polygon(self.display, color, [(x, y),
-                                                  (x + w, y),
-                                                  (x, y + h)])
-        pygame.draw.polygon(self.display, color, [(x + w, y + h),
-                                                 (x + w, y),
-                                                 (x, y + h)])
+        pygame.draw.polygon(self.display, color, [(x, y), (x + w, y), (x, y + h)])
+        pygame.draw.polygon(
+            self.display, color, [(x + w, y + h), (x + w, y), (x, y + h)]
+        )
 
     def draw_circle(self, x, y, r, color):
         for i in range(self.n_triangles):
@@ -39,6 +37,10 @@ class Shape:
 
     # https://stackoverflow.com/questions/36510795/rotating-a-rectangle-not-image-in-pygame
     def draw_rotated_rectangle(self, x, y, width, height, angle_deg, color):
+        points = self.rotated_rectangle_points(x, y, width, height, angle_deg)
+        pygame.draw.polygon(self.display, color, points)
+
+    def rotated_rectangle_points(self, x, y, width, height, angle_deg):
         radius = math.sqrt((height / 2) ** 2 + (width / 2) ** 2)
         angle = math.atan2(height / 2, width / 2)
         angles = [angle, -angle + math.pi, angle + math.pi, -angle]
@@ -48,7 +50,7 @@ class Shape:
             y_offset = -1 * radius * math.sin(a + rot_radians)
             x_offset = radius * math.cos(a + rot_radians)
             points.append((x + x_offset, y + y_offset))
-        pygame.draw.polygon(self.display, color, points)
+        return points
 
     # https://stackoverflow.com/questions/6339057/draw-transparent-rectangles-and-polygons-in-pygame
     def draw_triangle_alpha(self, p1, p2, p3, color, alpha):
