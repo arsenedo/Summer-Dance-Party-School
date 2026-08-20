@@ -6,7 +6,6 @@ from sdps.backend import InstrumentType
 from sdps.config import (
     CONFETTI_PADDING_POS,
     CURTAINS_TIME,
-    DANCER_COLORS,
     DANCER_X_PADDING,
     DANCER_Y_PADDING,
     DARKNESS_ALPHA,
@@ -17,7 +16,7 @@ from sdps.config import (
     SCREEN_WIDTH,
 )
 from sdps.frontend.components.entities.confetti_cannon import ConfettiCannon
-from sdps.frontend.components.entities.dancer import Dancer
+from sdps.frontend.components.entities.dancer.generator import generate_dancer
 from sdps.frontend.components.entities.particles import (
     FloatingParticle,
     Particle,
@@ -236,8 +235,7 @@ class Engine:
         floor_top = self.floor.y_offset + DANCER_Y_PADDING
         floor_bottom = SCREEN_HEIGHT - DANCER_Y_PADDING
         y = randint(floor_top, floor_bottom)
-        color = choice(DANCER_COLORS)
-        Dancer(self.dancer_group, (x, y), color)
+        generate_dancer(self.dancer_group, (x, y))
 
     def _shoot_confetti(self, n: int, pos: tuple[int, int], side: int):
         """shoot confettis from a position
