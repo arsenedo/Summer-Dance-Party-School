@@ -1,3 +1,4 @@
+from .bodypart import BodyPart
 from .confetti_cannon import ConfettiCannon
 from .dancer import Dancer
 from .particles import FloatingParticle, Particle
@@ -9,6 +10,7 @@ __all__ = [
     "SpotlightRig",
     "ConfettiCannon",
     "Dancer",
+    "BodyPart",
     "Particle",
     "FloatingParticle",
 ]
