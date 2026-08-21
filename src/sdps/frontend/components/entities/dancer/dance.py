@@ -7,7 +7,7 @@ class Dance:
         self.step_duration = step_duration
 
 
-IDLE_POSE = P(0, 0, 0, 0)
+IDLE_POSE = make_pose(0, 0, 0, 0)
 
 DANCES = [
     Dance([make_pose(0, 0, 0, 0), make_pose(-8, 8, 0, 0)], 0.50),
