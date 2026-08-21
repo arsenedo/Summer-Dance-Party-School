@@ -30,7 +30,7 @@ class Engine:
         self.running = True
         self.shape = Shape(self.screen, 20)
         self.background = pygame.Surface(self.screen.get_size())
-        self.curtains_speed = (SCREEN_WIDTH / 2) / (CURTAINS_TIME * 1000)
+        self.curtains_speed = 2000
 
         self.particle_group = pygame.sprite.Group()
         self.floating_particle_timer = pygame.event.custom_type()
@@ -45,7 +45,7 @@ class Engine:
         self.background.fill((0, 0, 0))
         self.floor = Floor(self.screen.get_width(), self.screen.get_height() / 3,
                             self.screen.get_height() - self.screen.get_height() / 3)
-        self.curtains = Curtains(self.screen.get_height())
+        self.curtains = Curtains(self.screen.get_width(), self.screen.get_height())
         self.spotlight_rig = SpotlightRig(self.screen, 20, self.screen.get_width(), 20,
                                           self.floor.y_offset + self.floor.height / 2)
         self.darkness = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -92,18 +92,11 @@ class Engine:
             self.left_cannon.draw()
             self.right_cannon.draw()
 
-            elapsed_ms = pygame.time.get_ticks() - start_ticks
-            if elapsed_ms < CURTAINS_TIME * 1000:
-                distance_moved = self.curtains_speed * elapsed_ms
-
-                # Open curtains
-                x = (SCREEN_WIDTH / 2) - distance_moved
-                # Close curtains
-                # x = distance_moved
-
-                self.curtains.draw(self.screen, x)
-
             dt = self.clock.tick() / 1000
+
+            elapsed_ms = pygame.time.get_ticks() - start_ticks
+
+            self._update_curtains(dt)
 
             self.particle_group.draw(self.screen)
             self.particle_group.update(dt)
@@ -142,3 +135,14 @@ class Engine:
                 speed = randint(50, 100)
                 particle = FloatingParticle(self.particle_group, pos, color, direction, speed)
                 spotlight.particles_group.add(particle)
+
+    def _update_curtains(self, dt):
+        dt_adjusted_speed = self.curtains_speed * dt
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_UP]:
+            self.curtains.move_curtains((-dt_adjusted_speed, dt_adjusted_speed))
+        if keys[pygame.K_DOWN]:
+            self.curtains.move_curtains((dt_adjusted_speed, -dt_adjusted_speed))
+        self.curtains.update(dt)
+        self.curtains.draw(self.screen)
