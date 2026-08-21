@@ -1,9 +1,9 @@
-from sdps.config import FLOOR_COLOR
+from sdps.config import FLOOR_COLOR, SCREEN_WIDTH
 from sdps.frontend.components.shape import Shape
 
 
 class Floor:
-    def __init__(self, width=1920, height=540, y_offset=540):
+    def __init__(self, width=SCREEN_WIDTH, height=540, y_offset=540):
         self.width = width
         self.height = height
         self.y_offset = y_offset

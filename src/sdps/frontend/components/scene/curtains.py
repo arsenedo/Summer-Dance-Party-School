@@ -1,10 +1,10 @@
 
-from sdps.config import CURTAINS_COLOR
+from sdps.config import CURTAINS_COLOR, SCREEN_HEIGHT
 from sdps.frontend.components.shape import Shape
 
 
 class Curtains:
-    def __init__(self, height=1080):
+    def __init__(self, height=SCREEN_HEIGHT):
         self.height = height
 
     def draw(self, display, width):
