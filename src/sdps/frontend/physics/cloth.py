@@ -30,16 +30,6 @@ class Cloth:
                 self.points.append(point)
 
     def update(self, delta_time):
-        # CRITICAL FIX 1: Unit Conversion
-        # Pygame's clock.tick() returns milliseconds (e.g., 16).
-        # If dt is 16, dt squared is 256. Gravity (981 * 256) becomes 251,136 pixels/frame,
-        # which instantly destroys the simulation. This forces it into seconds.
-        if delta_time > 1.0:
-            delta_time /= 1000.0
-
-        # Cap delta_time to prevent physics explosions during lag spikes or window dragging
-        delta_time = min(delta_time, 0.05)
-
         # CRITICAL FIX 2: Sub-stepping
         # Divide the frame into smaller, highly stable chunks
         sub_steps = 5
