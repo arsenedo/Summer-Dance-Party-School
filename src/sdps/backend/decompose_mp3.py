@@ -12,7 +12,7 @@ class DecomposeMp3:
         self.fmin = librosa.note_to_hz('C-2') #Note basse de la plage totale
         self.n_bins = 96 # Nombre de notes totales depuis la note basse
         self.notes = librosa.midi_to_note(librosa.hz_to_midi(librosa.cqt_frequencies(n_bins=self.n_bins, fmin=self.fmin)))
-        y, sr = librosa.load("./assets/sounds/" + MP3_FILENAME, sr=None, duration=4, offset=7)
+        y, sr = librosa.load("./assets/sounds/" + MP3_FILENAME, sr=None)
         self.y = y
         self.sr = sr
         self.notesTiming = librosa.onset.onset_detect(y=self.y, sr=self.sr, units='time')
@@ -79,7 +79,7 @@ class DecomposeMp3:
             # print(set(db))
 
             delta = t - last_message
-            ticks = int(mido.second2tick(delta, mid.ticks_per_beat, tempo))
+            ticks = int(mido.second2tick(delta, mid.ticks_per_beat, tempo)) - (100 if len(track) > 0 else 0)
 
             last_message = t
             first_note = True
@@ -90,7 +90,9 @@ class DecomposeMp3:
                     first_note = False
                 else:
                     track.append(mido.Message('note_on', note=self.notes_midi[note], velocity=64, time=0))
-                track.append(mido.Message("note_off", note=self.notes_midi[note], velocity=64, time=100))
+
+            for idx, note in enumerate(db):
+                track.append(mido.Message("note_off", note=self.notes_midi[note], velocity=64, time=(100 if idx == 0 else 0)))
 
         midi_fn = "new_song.mid"
         mid.save(midi_fn)
@@ -107,4 +109,3 @@ class DecomposeMp3:
         meta_track.append(MetaMessage('set_tempo', tempo=mido.bpm2tempo(self.bpm), time=0))
         meta_track.append(MetaMessage('time_signature', numerator=4, denominator=4, time=0))
         meta_track.append(MetaMessage('end_of_track', time=0))
-
