@@ -42,7 +42,7 @@ class Cloth:
 
         # CRITICAL FIX 2: Sub-stepping
         # Divide the frame into smaller, highly stable chunks
-        sub_steps = 8
+        sub_steps = 5
         sub_dt = delta_time / sub_steps
 
         for _ in range(sub_steps):
