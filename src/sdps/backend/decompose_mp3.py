@@ -5,6 +5,7 @@ import librosa
 import mido
 import numpy as np
 import scipy
+from sdps.backend import note_handler
 
 class DecomposeMp3:
     def __init__(self):
@@ -48,6 +49,7 @@ class DecomposeMp3:
         # Calcul du CQT sur la plage définie
         C = librosa.cqt(self.y, sr=self.sr, hop_length=self.hop_length, fmin=self.fmin, n_bins=self.n_bins)
 
+        note_list = []
         for t in self.notesTiming:
             #print(t)
 
@@ -85,6 +87,7 @@ class DecomposeMp3:
             first_note = True
 
             for note in db:
+                note_list.append(note_handler.create(note, t, t + 1, "Piano"))
                 if first_note:
                     track.append(mido.Message('note_on', note=self.notes_midi[note], velocity=64, time=ticks))
                     first_note = False
@@ -96,7 +99,8 @@ class DecomposeMp3:
 
         midi_fn = "new_song.mid"
         mid.save(midi_fn)
-        print("Fichier midi créé et sauvegardé sous " + midi_fn)
+
+        return note_list
 
     def estimate_bmp(self):
         onset_env = librosa.onset.onset_strength(y=self.y, sr=self.sr)

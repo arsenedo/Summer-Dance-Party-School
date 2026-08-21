@@ -23,4 +23,4 @@ class Note:
 
 
 def create(note: str, start: int, end: int, instrument: str):
-    return Note(NoteType[note[0]], start, end, InstrumentType[instrument], len(note) > 1)
+    return Note(NoteType[note[0]], start, end, InstrumentType[instrument.upper()], len(note) > 1)
