@@ -23,6 +23,8 @@ from sdps.frontend.components.shape import Shape
 
 
 class Engine:
+    dt = 0
+
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -30,7 +32,7 @@ class Engine:
         self.running = True
         self.shape = Shape(self.screen, 20)
         self.background = pygame.Surface(self.screen.get_size())
-        self.curtains_speed = 2000
+        self.curtains_speed = 500
 
         self.particle_group = pygame.sprite.Group()
         self.floating_particle_timer = pygame.event.custom_type()
@@ -59,29 +61,7 @@ class Engine:
         start_ticks = pygame.time.get_ticks()
 
         while self.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                elif event.type == pygame.KEYDOWN:
-                    key = event.key
-                    if pygame.K_1 <= key <= pygame.K_7:
-                        i = key - pygame.K_1
-                        self.spotlight_rig.toggle(i)
-                    elif key == pygame.K_q:
-                        self.left_cannon.shoot()
-                        x = self.left_cannon.x + self.left_cannon.body_size / 2
-                        y = (self.left_cannon.y - self.left_cannon.body_size
-                             - self.left_cannon.barrel_length / 2)
-                        self._shoot_confetti(1000, (x, y), 1)
-                    elif key == pygame.K_w:
-                        self.right_cannon.shoot()
-                        x = self.right_cannon.x - self.right_cannon.body_size / 2
-                        y = (self.right_cannon.y - self.right_cannon.body_size
-                             - self.right_cannon.barrel_length / 2)
-                        self._shoot_confetti(1000, (x, y), -1)
-                elif event.type == self.floating_particle_timer:
-                    self._spawn_floating_particle()
-
+            self._iterate_events()
             self.screen.blit(self.background, (0, 0))
             self.floor.draw(self.screen)
             self.spotlight_rig.draw()
@@ -92,19 +72,39 @@ class Engine:
             self.left_cannon.draw()
             self.right_cannon.draw()
 
-            dt = self.clock.tick() / 1000
-
-            elapsed_ms = pygame.time.get_ticks() - start_ticks
-
-            self._update_curtains(dt)
+            self._update_curtains(self.dt)
 
             self.particle_group.draw(self.screen)
-            self.particle_group.update(dt)
+            self.particle_group.update(self.dt)
 
             pygame.display.flip()
-            self.clock.tick(FPS)
+            self.dt = self.clock.tick(FPS) / 1000
 
         pygame.quit()
+
+    def _iterate_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.KEYDOWN:
+                key = event.key
+                if pygame.K_1 <= key <= pygame.K_7:
+                    i = key - pygame.K_1
+                    self.spotlight_rig.toggle(i)
+                elif key == pygame.K_q:
+                    self.left_cannon.shoot()
+                    x = self.left_cannon.x + self.left_cannon.body_size / 2
+                    y = (self.left_cannon.y - self.left_cannon.body_size
+                         - self.left_cannon.barrel_length / 2)
+                    self._shoot_confetti(1000, (x, y), 1)
+                elif key == pygame.K_w:
+                    self.right_cannon.shoot()
+                    x = self.right_cannon.x - self.right_cannon.body_size / 2
+                    y = (self.right_cannon.y - self.right_cannon.body_size
+                         - self.right_cannon.barrel_length / 2)
+                    self._shoot_confetti(1000, (x, y), -1)
+            elif event.type == self.floating_particle_timer:
+                self._spawn_floating_particle()
 
     def _shoot_confetti(self, n: int, pos: tuple[int, int], side: int):
         """shoot confettis from a position
