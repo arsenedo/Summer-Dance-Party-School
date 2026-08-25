@@ -17,7 +17,7 @@ class Curtains:
             self.curtain_width // self.spacing,
             self.curtain_height // self.spacing,
             self.spacing,
-            10,
+            start_x,
             start_y,
         )
 
@@ -25,7 +25,7 @@ class Curtains:
             self.curtain_width // self.spacing,
             self.curtain_height // self.spacing,
             self.spacing,
-            screen_width // 2,
+            screen_width // 2 + start_x,
             start_y
         )
 

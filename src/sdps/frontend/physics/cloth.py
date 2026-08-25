@@ -9,7 +9,7 @@ from sdps.frontend.physics.physics_point import PhysicsPoint
 
 class Cloth:
     iterations = 1
-    drag = 0.35 * (10 ** -iterations)
+    drag = 0.30 * (10 ** -iterations)
 
     def __init__(self, width: int, height: int, spacing: int, start_x: int, start_y: int):
         self.gravity = Vector2(0, 5000)

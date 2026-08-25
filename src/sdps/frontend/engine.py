@@ -32,7 +32,7 @@ class Engine:
         self.running = True
         self.shape = Shape(self.screen, 20)
         self.background = pygame.Surface(self.screen.get_size())
-        self.curtains_speed = 500
+        self.curtains_speed = 150
 
         self.particle_group = pygame.sprite.Group()
         self.floating_particle_timer = pygame.event.custom_type()
