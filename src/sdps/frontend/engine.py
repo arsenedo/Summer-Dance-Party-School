@@ -3,9 +3,9 @@ from random import choice, randint
 
 import pygame
 
+from sdps.backend import InstrumentType, NoteType
 from sdps.config import (
     CONFETTI_PADDING_POS,
-    CURTAINS_TIME,
     DARKNESS_ALPHA,
     FPS,
     SCREEN_HEIGHT,
@@ -25,7 +25,7 @@ from sdps.frontend.components.shape import Shape
 class Engine:
     dt = 0
 
-    def __init__(self):
+    def __init__(self, note_list):
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
@@ -33,6 +33,7 @@ class Engine:
         self.shape = Shape(self.screen, 20)
         self.background = pygame.Surface(self.screen.get_size())
         self.curtains_speed = 150
+        self.note_list = note_list
 
         self.particle_group = pygame.sprite.Group()
         self.floating_particle_timer = pygame.event.custom_type()
@@ -61,6 +62,9 @@ class Engine:
         start_ticks = pygame.time.get_ticks()
 
         while self.running:
+            elapsed_time = (pygame.time.get_ticks() - start_ticks) / 1000
+            self._check_notes(elapsed_time)
+
             self._iterate_events()
             self.screen.blit(self.background, (0, 0))
             self.floor.draw(self.screen)
@@ -105,6 +109,40 @@ class Engine:
                     self._shoot_confetti(1000, (x, y), -1)
             elif event.type == self.floating_particle_timer:
                 self._spawn_floating_particle()
+
+    def _manage_lights(self, id, turn_on):
+        if id < len(self.spotlight_rig.spotlights):
+            if turn_on:
+                self.spotlight_rig.turn_on(id)
+            else:
+                self.spotlight_rig.turn_off(id)
+    def _manage_dancers(self, id, turn_on): pass
+    def _manage_notes_event(self, note, turn_on):
+        manager = self._manage_lights if note.instrument == InstrumentType.PIANO else self._manage_dancers
+        match note.note:
+            case NoteType.A:
+                manager(0, turn_on)
+            case NoteType.B:
+                manager(1, turn_on)
+            case NoteType.C:
+                manager(2, turn_on)
+            case NoteType.D:
+                manager(3, turn_on)
+            case NoteType.E:
+                manager(4, turn_on)
+            case NoteType.F:
+                manager(5, turn_on)
+            case NoteType.G:
+                manager(6, turn_on)
+
+    def _check_notes(self, elapsed_time):
+        # print(elapsed_time)
+        t = 0.02
+        for note in self.note_list:
+            if elapsed_time >= note.start - t and elapsed_time <= note.start + t:
+                self._manage_notes_event(note, True)
+            elif elapsed_time >= note.end - t and elapsed_time <= note.end + t:
+                self._manage_notes_event(note, False)
 
     def _shoot_confetti(self, n: int, pos: tuple[int, int], side: int):
         """shoot confettis from a position
