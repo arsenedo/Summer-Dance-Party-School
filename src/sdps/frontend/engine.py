@@ -8,6 +8,7 @@ from sdps.config import (
     CONFETTI_PADDING_POS,
     DARKNESS_ALPHA,
     FPS,
+    MP3_FILENAME,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
@@ -26,6 +27,18 @@ class Engine:
     dt = 0
 
     def __init__(self, note_list):
+        try:
+            pygame.mixer.init()
+        # wsl drivers problems
+        except pygame.error:
+            import os
+            for driver in ("pulse", "alsa", "sdl", "dummy"):
+                try:
+                    os.environ["SDL_AUDIODRIVER"] = driver
+                    pygame.mixer.init()
+                    break
+                except pygame.error:
+                    continue
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
@@ -59,10 +72,11 @@ class Engine:
                                            SCREEN_HEIGHT - CONFETTI_PADDING_POS, 45)
 
     def run(self):
-        start_ticks = pygame.time.get_ticks()
+        pygame.mixer.music.load(f"./assets/sounds/{MP3_FILENAME}")
+        pygame.mixer.music.play()
 
         while self.running:
-            elapsed_time = (pygame.time.get_ticks() - start_ticks) / 1000
+            elapsed_time = pygame.mixer.music.get_pos() / 1000
             self._check_notes(elapsed_time)
 
             self._iterate_events()
@@ -137,11 +151,10 @@ class Engine:
 
     def _check_notes(self, elapsed_time):
         # print(elapsed_time)
-        t = 0.02
         for note in self.note_list:
-            if elapsed_time >= note.start - t and elapsed_time <= note.start + t:
+            if elapsed_time >= note.start - self.dt and elapsed_time <= note.start + self.dt:
                 self._manage_notes_event(note, True)
-            elif elapsed_time >= note.end - t and elapsed_time <= note.end + t:
+            elif elapsed_time >= note.end - self.dt and elapsed_time <= note.end + self.dt:
                 self._manage_notes_event(note, False)
 
     def _shoot_confetti(self, n: int, pos: tuple[int, int], side: int):
