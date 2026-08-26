@@ -13,10 +13,10 @@ class DecomposeMp3:
         self.fmin = librosa.note_to_hz('C-2') #Note basse de la plage totale
         self.n_bins = 96 # Nombre de notes totales depuis la note basse
         self.notes = librosa.midi_to_note(librosa.hz_to_midi(librosa.cqt_frequencies(n_bins=self.n_bins, fmin=self.fmin)))
-        y, sr = librosa.load("./assets/sounds/" + MP3_FILENAME, sr=None)
+        y, sr = librosa.load("./assets/sounds/" + MP3_FILENAME)
         self.y = y
         self.sr = sr
-        self.notesTiming = librosa.onset.onset_detect(y=self.y, sr=self.sr, units='time')
+        self.spectral_centroids = librosa.feature.spectral_centroid(y=self.y, sr=self.sr)
         self.hop_length = 512
         self.bpm = self.estimate_bmp()
         self.notes_midi = {
@@ -34,6 +34,12 @@ class DecomposeMp3:
             "B": 71,
         }
 
+        stft = librosa.stft(self.y)
+        logS = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
+
+        onset_env = librosa.onset.onset_strength(S=logS)
+        self.notesTiming = librosa.onset.onset_detect(onset_envelope=onset_env)
+
 
 
     def run(self):
@@ -49,16 +55,10 @@ class DecomposeMp3:
         # Calcul du CQT sur la plage définie
         C = librosa.cqt(self.y, sr=self.sr, hop_length=self.hop_length, fmin=self.fmin, n_bins=self.n_bins)
 
-        note_list = []
-        for t in self.notesTiming:
-            #print(t)
+        note_list: list[note_handler.Note] = []
+        for frame_index in self.notesTiming:
+            t = frame_index * self.hop_length / self.sr
 
-            target_time = t
-            center_sample = int(target_time * self.sr)
-            target_time = t + 0.12
-
-            # Permets de convertir le temps en seconde en saut de temps (hop)
-            frame_index = librosa.time_to_frames(target_time, sr=self.sr, hop_length=self.hop_length)
             specific_cqt = C[:, frame_index]  # récup la bonne ligne du tableau librosa
             specific_db = np.abs(specific_cqt)
 
@@ -86,8 +86,10 @@ class DecomposeMp3:
             last_message = t
             first_note = True
 
+            instrument = self._determine_instrument(frame_index)
+
             for note in db:
-                note_list.append(note_handler.create(note, t, t + 1, "Piano"))
+                note_list.append(note_handler.create(note, t, t + 1, instrument))
                 if first_note:
                     track.append(mido.Message('note_on', note=self.notes_midi[note], velocity=64, time=ticks))
                     first_note = False
@@ -99,6 +101,14 @@ class DecomposeMp3:
 
         midi_fn = "new_song.mid"
         mid.save(midi_fn)
+
+        counter = 0
+
+        for note in note_list:
+            if note.instrument == note_handler.InstrumentType.PIANO:
+                counter += 1
+
+        print("SUCCess rate is ", counter / len(note_list) * 100, "%", len(note_list))
 
         return note_list
 
@@ -113,3 +123,23 @@ class DecomposeMp3:
         meta_track.append(MetaMessage('set_tempo', tempo=mido.bpm2tempo(self.bpm), time=0))
         meta_track.append(MetaMessage('time_signature', numerator=4, denominator=4, time=0))
         meta_track.append(MetaMessage('end_of_track', time=0))
+
+    def _determine_instrument(self, frame_idx) -> str:
+        first_option = self._calculate_spectral_centroid_slope(frame_idx)
+
+        return first_option
+
+    def _calculate_spectral_centroid_slope(self, frame_idx):
+        frames_offset = 2  # 93ms per frame, 186ms neighbor frames, in total 279ms to avoid falling into trumpet's fall off on note end
+        neighbor_frame = frame_idx + frames_offset
+        slope_evo_threshold = -20
+
+        start_centroid = self.spectral_centroids[0][frame_idx]
+        end_centroid = self.spectral_centroids[0][neighbor_frame]
+
+        slope = (end_centroid - start_centroid) / (neighbor_frame - frame_idx)
+
+        if slope < slope_evo_threshold:
+            return "Piano"
+        else:
+            return "Trumpet"
