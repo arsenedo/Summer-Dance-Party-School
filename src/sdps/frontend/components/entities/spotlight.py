@@ -33,6 +33,14 @@ class Spotlight:
                                        self.color, SPOTLIGHT_ALPHA)
         shape.draw_rectangle(x, y, self.width, self.height, SPOTLIGHT_COLOR)
 
+    def turn_on(self):
+        self.is_on = True
+
+    def turn_off(self):
+        self.is_on = False
+        for particle in self.particles_group.sprites():
+            particle.kill()
+
     def toggle(self):
         self.is_on = not self.is_on
         if not self.is_on:

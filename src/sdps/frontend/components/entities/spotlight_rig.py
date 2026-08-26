@@ -32,6 +32,12 @@ class SpotlightRig:
             spotlights.append(spotlight)
         return spotlights
 
+    def turn_on(self, i):
+        self.spotlights[i].turn_on()
+
+    def turn_off(self, i):
+        self.spotlights[i].turn_off()
+
     def toggle(self, i):
         self.spotlights[i].toggle()
 
