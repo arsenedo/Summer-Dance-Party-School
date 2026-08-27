@@ -1,4 +1,5 @@
 from mido import MidiTrack, MetaMessage
+from numba.cpython.numbers import literal_int_to_boolean
 
 from sdps.config import MP3_FILENAME
 import librosa
@@ -16,6 +17,7 @@ class DecomposeMp3:
         y, sr = librosa.load("./assets/sounds/" + MP3_FILENAME)
         self.y = y
         self.sr = sr
+        self.notesTiming = librosa.onset.onset_detect(y=self.y, sr=self.sr, units='time')
         self.spectral_centroids = librosa.feature.spectral_centroid(y=self.y, sr=self.sr)
         self.hop_length = 512
         self.bpm = self.estimate_bmp()
@@ -35,10 +37,10 @@ class DecomposeMp3:
         }
 
         stft = librosa.stft(self.y)
-        logS = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
-
-        onset_env = librosa.onset.onset_strength(S=logS)
-        self.notesTiming = librosa.onset.onset_detect(onset_envelope=onset_env)
+        log_s = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
+        onset_env = librosa.onset.onset_strength(S=log_s)
+        self.onset_frames = librosa.onset.onset_detect(onset_envelope=onset_env)
+        print(len(self.notesTiming), len(self.onset_frames))
 
 
 
@@ -56,8 +58,10 @@ class DecomposeMp3:
         C = librosa.cqt(self.y, sr=self.sr, hop_length=self.hop_length, fmin=self.fmin, n_bins=self.n_bins)
 
         note_list: list[note_handler.Note] = []
-        for frame_index in self.notesTiming:
-            t = frame_index * self.hop_length / self.sr
+        for idx, t in enumerate(self.notesTiming):
+            target_time = t + 0.12
+
+            frame_index = librosa.time_to_frames(target_time, sr=self.sr, hop_length=self.hop_length)
 
             specific_cqt = C[:, frame_index]  # récup la bonne ligne du tableau librosa
             specific_db = np.abs(specific_cqt)
@@ -86,7 +90,9 @@ class DecomposeMp3:
             last_message = t
             first_note = True
 
-            instrument = self._determine_instrument(frame_index)
+            if idx > len(self.onset_frames - 1):
+                print("ATTENTION, OUR CODE IS ASS")
+            instrument = self._determine_instrument(self.onset_frames[min(idx, len(self.onset_frames - 1))])
 
             for note in db:
                 note_list.append(note_handler.create(note, t, t + 1, instrument))
