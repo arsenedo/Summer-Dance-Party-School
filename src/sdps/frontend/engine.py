@@ -43,9 +43,13 @@ class Engine:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
         self.running = True
+        self.opening = True
         self.shape = Shape(self.screen, 20)
         self.background = pygame.Surface(self.screen.get_size())
         self.curtains_speed = 150
+        self.curtains_offset = 0
+        self.music_ended = False
+        self.max_curtain_offset = (SCREEN_WIDTH / 2 ) - 100
         self.note_list = note_list
 
         self.particle_group = pygame.sprite.Group()
@@ -72,12 +76,39 @@ class Engine:
                                            SCREEN_HEIGHT - CONFETTI_PADDING_POS, 45)
 
     def run(self):
+
+        self.opening_timer = pygame.event.custom_type()
+        self.closing_timer = pygame.event.custom_type()
+
+        self.music_end_event = pygame.event.custom_type()
+        pygame.mixer.music.set_endevent(self.music_end_event)
+        pygame.time.set_timer(self.opening_timer, 5000)
+
+        self.clock.tick(FPS)
+
         pygame.mixer.music.load(f"./assets/sounds/{MP3_FILENAME}")
-        pygame.mixer.music.play()
+
+        time = random.randrange(0, 50, 1)
+        curtains_moove = False
 
         while self.running:
-            elapsed_time = pygame.mixer.music.get_pos() / 1000
-            self._check_notes(elapsed_time)
+            if self.opening or self.music_ended:
+                time = time - 1
+                if time <=0:
+                    curtains_moove = not curtains_moove
+                    if curtains_moove :
+                        time = random.randrange(25, 70, 1)
+                    else:
+                        time = random.randrange(50, 250, 1)
+                if not curtains_moove and self.opening:
+                    self._update_curtains(self.dt, "open")
+                elif self.music_ended:
+                    self._update_curtains(self.dt, "close")
+            else:
+                elapsed_time = pygame.mixer.music.get_pos() / 1000
+                self._check_notes(elapsed_time)
+                self._update_curtains(self.dt, "")
+
 
             self._iterate_events()
             self.screen.blit(self.background, (0, 0))
@@ -90,13 +121,14 @@ class Engine:
             self.left_cannon.draw()
             self.right_cannon.draw()
 
-            self._update_curtains(self.dt)
+            self._update_curtains(self.dt, "")
 
             self.particle_group.draw(self.screen)
             self.particle_group.update(self.dt)
 
             pygame.display.flip()
             self.dt = self.clock.tick(FPS) / 1000
+
 
         pygame.quit()
 
@@ -123,6 +155,17 @@ class Engine:
                     self._shoot_confetti(1000, (x, y), -1)
             elif event.type == self.floating_particle_timer:
                 self._spawn_floating_particle()
+            elif event.type == pygame.QUIT:
+                self.opening = False
+                self.running = False
+            elif event.type == self.music_end_event:
+                print("Music ended !")
+                self.music_ended = True
+            elif event.type == self.opening_timer:
+                print("Pre-start")
+                pygame.time.set_timer(self.opening_timer, 0)
+                pygame.mixer.music.play()
+                self.opening = False
 
     def _manage_lights(self, id, turn_on):
         if id < len(self.spotlight_rig.spotlights):
@@ -187,9 +230,23 @@ class Engine:
                 particle = FloatingParticle(self.particle_group, pos, color, direction, speed)
                 spotlight.particles_group.add(particle)
 
-    def _update_curtains(self, dt):
+    def _update_curtains(self, dt, state):
         dt_adjusted_speed = self.curtains_speed * dt
         keys = pygame.key.get_pressed()
+
+        if state == "open" and self.curtains_offset < self.max_curtain_offset:
+            self.curtains.move_curtains((-dt_adjusted_speed, dt_adjusted_speed))
+            move = min(dt_adjusted_speed, self.max_curtain_offset - self.curtains_offset)
+            self.curtains.move_curtains((-move, move))
+            self.curtains_offset += move
+
+        if state == "close" and self.curtains_offset > 0:
+            self.curtains.move_curtains((dt_adjusted_speed, -dt_adjusted_speed))
+            move = min(dt_adjusted_speed, self.curtains_offset)
+            self.curtains.move_curtains((move, -move))
+            self.curtains_offset -= move
+        if state == "close" and self.curtains_offset <= 0:
+            self.running = False
 
         if keys[pygame.K_UP]:
             self.curtains.move_curtains((-dt_adjusted_speed, dt_adjusted_speed))
