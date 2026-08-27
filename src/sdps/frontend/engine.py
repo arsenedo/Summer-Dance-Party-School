@@ -42,7 +42,6 @@ class Engine:
         self.clock = pygame.time.Clock()
         self.running = True
         self.opening = True
-        self.shape = Shape(self.screen, 20)
         self.background = pygame.Surface(self.screen.get_size())
         self.curtains_speed = 150
         self.curtains_offset = 0
