@@ -36,7 +36,7 @@ class SpotlightRig:
             c_x = x + spacing * (i + 0.5)
             color = SPOTLIGHT_COLORS[i % len(SPOTLIGHT_COLORS)]
             spotlight = Spotlight(self.display, c_x, self.height, 30, 45,
-                                  color, self.light_end_y)
+                                  color, self.floor_top_y, self.floor_bottom_y)
             spotlights.append(spotlight)
         return spotlights
 

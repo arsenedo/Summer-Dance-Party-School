@@ -1,3 +1,5 @@
+import random
+
 import pygame
 
 from sdps.config import SPOTLIGHT_ALPHA, SPOTLIGHT_COLOR, SPOTLIGHT_LIGHT_HALF_WIDTH
@@ -6,14 +8,17 @@ from sdps.frontend.components.shape import Shape
 
 
 class Spotlight:
-    def __init__(self, display, x, y_offset, width, height, color, light_end_y):
+    def __init__(self, display, x, y_offset, width, height, color,
+                 floor_top_y, floor_bottom_y):
         self.display = display
         self.x = x
         self.y_offset = y_offset
         self.width = width
         self.height = height
         self.color = color
-        self.light_end_y = light_end_y
+        self.floor_top_y = floor_top_y
+        self.floor_bottom_y = floor_bottom_y
+        self.light_end_y = (floor_top_y + floor_bottom_y) / 2
         self.is_on = False
         self.particles_group = pygame.sprite.Group()
         self.shape = Shape(display)
@@ -37,8 +42,12 @@ class Spotlight:
                                        self.color, SPOTLIGHT_ALPHA)
         self.shape.draw_rectangle(x, y, self.width, self.height, SPOTLIGHT_COLOR)
 
+    def _pick_random_light_end_y(self):
+        return random.uniform(self.floor_top_y, self.floor_bottom_y)
+
     def turn_on(self):
         self.is_on = True
+        self.light_end_y = self._pick_random_light_end_y()
 
     def turn_off(self):
         self.is_on = False
