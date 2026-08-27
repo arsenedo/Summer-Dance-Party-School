@@ -129,6 +129,9 @@ class Engine:
             self.floor.draw(self.screen)
             self.spotlight_rig.draw()
 
+            self.dancer_group.update(self.dt)
+            self.dancer_group.draw(self.screen)
+
             self.darkness.fill((0, 0, 0, DARKNESS_ALPHA))
             self.spotlight_rig.apply_darkness(self.darkness)
             self.screen.blit(self.darkness, (0, 0))
@@ -173,6 +176,10 @@ class Engine:
                     y = (self.right_cannon.y - self.right_cannon.body_size
                          - self.right_cannon.barrel_length / 2)
                     self._shoot_confetti(1000, (x, y), -1)
+                elif key == pygame.K_SPACE:
+                    self._spawn_dancer()
+                elif key == pygame.K_a:
+                    self._start_dance()
             elif event.type == self.floating_particle_timer:
                 self._spawn_floating_particle()
             elif event.type == pygame.QUIT:
@@ -234,10 +241,10 @@ class Engine:
         if len(self.dancer_group) >= MAX_DANCERS:
             self.dancer_group.sprites()[0].kill()
 
-        x = randint(DANCER_X_PADDING, SCREEN_WIDTH - DANCER_X_PADDING)
-        floor_top = self.floor.y_offset + DANCER_Y_PADDING
-        floor_bottom = SCREEN_HEIGHT - DANCER_Y_PADDING
-        y = randint(floor_top, floor_bottom)
+        x = random.randint(DANCER_X_PADDING, SCREEN_WIDTH - DANCER_X_PADDING)
+        floor_top = int(self.floor.y_offset + DANCER_Y_PADDING)
+        floor_bottom = int(SCREEN_HEIGHT - DANCER_Y_PADDING)
+        y = random.randint(floor_top, floor_bottom)
         generate_dancer(self.dancer_group, (x, y))
 
     def _start_dance(self):
