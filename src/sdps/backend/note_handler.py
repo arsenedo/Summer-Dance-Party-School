@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class NoteType(Enum):
     A = 0
     B = 1
@@ -20,6 +21,10 @@ class Note:
         self.end = end
         self.instrument = instrument
         self.is_half_note = is_half_note
+
+    @property
+    def index(self) -> int:
+        return self.note.value
 
 
 def create(note: str, start: int, end: int, instrument: str):

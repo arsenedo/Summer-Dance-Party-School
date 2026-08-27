@@ -1,9 +1,8 @@
 import random
-from random import choice, randint
 
 import pygame
 
-from sdps.backend import InstrumentType, NoteType
+from sdps.backend import InstrumentType
 from sdps.config import (
     CONFETTI_PADDING_POS,
     DARKNESS_ALPHA,
@@ -20,7 +19,6 @@ from sdps.frontend.components.entities.particles import (
 from sdps.frontend.components.entities.spotlight_rig import SpotlightRig
 from sdps.frontend.components.scene.curtains import Curtains
 from sdps.frontend.components.scene.floor import Floor
-from sdps.frontend.components.shape import Shape
 
 
 class Engine:
@@ -52,6 +50,10 @@ class Engine:
         self.max_curtain_offset = (SCREEN_WIDTH / 2 ) - 100
         self.note_list = note_list
 
+        self.note_events = self._build_note_events(note_list)
+        self.next_event_index = 0
+        self.active_note_counts = {}
+
         self.particle_group = pygame.sprite.Group()
         self.floating_particle_timer = pygame.event.custom_type()
         pygame.time.set_timer(self.floating_particle_timer, 10)
@@ -61,14 +63,18 @@ class Engine:
         self._init_scene()
 
     def _init_scene(self):
-        self.background = self.background.convert()
+        self.background = pygame.Surface(self.screen.get_size()).convert()
         self.background.fill((0, 0, 0))
         self.floor = Floor(self.screen.get_width(), self.screen.get_height() / 3,
                             self.screen.get_height() - self.screen.get_height() / 3)
         self.curtains = Curtains(self.screen.get_width(), self.screen.get_height())
         self.spotlight_rig = SpotlightRig(self.screen, 20, self.screen.get_width(), 20,
-                                          self.floor.y_offset + self.floor.height / 2)
+                                          self.floor.y_offset + self.floor.height / 2,
+                                          self.floor.y_offset,
+                                          self.floor.y_offset + self.floor.height)
         self.darkness = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        self.laser_layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT),
+                                          pygame.SRCALPHA)
         self.left_cannon = ConfettiCannon(self.screen, CONFETTI_PADDING_POS,
          SCREEN_HEIGHT - CONFETTI_PADDING_POS, 135)
         self.right_cannon = ConfettiCannon(self.screen,
@@ -118,13 +124,18 @@ class Engine:
             self.darkness.fill((0, 0, 0, DARKNESS_ALPHA))
             self.spotlight_rig.apply_darkness(self.darkness)
             self.screen.blit(self.darkness, (0, 0))
+
+            self.laser_layer.fill((0, 0, 0, 0))
+            self.spotlight_rig.draw_lasers_on(self.laser_layer)
+            self.screen.blit(self.laser_layer, (0, 0))
+
             self.left_cannon.draw()
             self.right_cannon.draw()
 
             self._update_curtains(self.dt, "")
 
-            self.particle_group.draw(self.screen)
             self.particle_group.update(self.dt)
+            self.particle_group.draw(self.screen)
 
             pygame.display.flip()
             self.dt = self.clock.tick(FPS) / 1000
@@ -141,6 +152,7 @@ class Engine:
                 if pygame.K_1 <= key <= pygame.K_7:
                     i = key - pygame.K_1
                     self.spotlight_rig.toggle(i)
+                    self.active_note_counts[i] = 0
                 elif key == pygame.K_q:
                     self.left_cannon.shoot()
                     x = self.left_cannon.x + self.left_cannon.body_size / 2
@@ -167,38 +179,48 @@ class Engine:
                 pygame.mixer.music.play()
                 self.opening = False
 
-    def _manage_lights(self, id, turn_on):
-        if id < len(self.spotlight_rig.spotlights):
-            if turn_on:
-                self.spotlight_rig.turn_on(id)
-            else:
-                self.spotlight_rig.turn_off(id)
-    def _manage_dancers(self, id, turn_on): pass
+    def _manage_lights(self, note, turn_on):
+        index = note.index
+        if not 0 <= index < len(self.spotlight_rig.spotlights):
+            return
+
+        count = self.active_note_counts.get(index, 0)
+        if turn_on:
+            self.active_note_counts[index] = count + 1
+            if count == 0:
+                self.spotlight_rig.turn_on(index)
+            if note.is_half_note:
+                self.spotlight_rig.fire_lasers(index)
+        else:
+            count = max(0, count - 1)
+            self.active_note_counts[index] = count
+            if count == 0:
+                self.spotlight_rig.turn_off(index)
+
+    def _manage_dancers(self, note, turn_on):
+        pass
+
     def _manage_notes_event(self, note, turn_on):
-        manager = self._manage_lights if note.instrument == InstrumentType.PIANO else self._manage_dancers
-        match note.note:
-            case NoteType.A:
-                manager(0, turn_on)
-            case NoteType.B:
-                manager(1, turn_on)
-            case NoteType.C:
-                manager(2, turn_on)
-            case NoteType.D:
-                manager(3, turn_on)
-            case NoteType.E:
-                manager(4, turn_on)
-            case NoteType.F:
-                manager(5, turn_on)
-            case NoteType.G:
-                manager(6, turn_on)
+        if note.instrument == InstrumentType.PIANO:
+            self._manage_lights(note, turn_on)
+        else:
+            self._manage_dancers(note, turn_on)
+
+    def _build_note_events(self, note_list):
+        events = []
+        for note in note_list:
+            events.append((note.start, note, True))
+            events.append((note.end, note, False))
+        events.sort(key=lambda e: (e[0], e[2]))
+        return events
 
     def _check_notes(self, elapsed_time):
-        # print(elapsed_time)
-        for note in self.note_list:
-            if elapsed_time >= note.start - self.dt and elapsed_time <= note.start + self.dt:
-                self._manage_notes_event(note, True)
-            elif elapsed_time >= note.end - self.dt and elapsed_time <= note.end + self.dt:
-                self._manage_notes_event(note, False)
+        while self.next_event_index < len(self.note_events):
+            event_time, note, turn_on = self.note_events[self.next_event_index]
+            if event_time > elapsed_time:
+                break
+            self._manage_notes_event(note, turn_on)
+            self.next_event_index += 1
 
     def _shoot_confetti(self, n: int, pos: tuple[int, int], side: int):
         """shoot confettis from a position
@@ -209,7 +231,7 @@ class Engine:
             side (int): direction to throw particles (-1: to the left, 1: to the right)
         """
         for _ in range(n):
-            color = choice(("red", "green", "blue"))
+            color = random.choice(("red", "green", "blue"))
             direction = pygame.math.Vector2(random.gauss(side, 0.25),
                                             random.gauss(-1, 0.25))
             direction = direction.normalize()
@@ -220,14 +242,16 @@ class Engine:
         spotlights = self.spotlight_rig.spotlights
         for spotlight in spotlights:
             if spotlight.is_on and random.randint(0, 100) > 99:
-                init_pos = (spotlight.x,
-                            self.spotlight_rig.y * 2 + spotlight.y_offset
-                            + spotlight.height)
-                pos = init_pos[0] + randint(-10, 10), init_pos[1] + randint(-10, 10)
+                init_pos = spotlight.emitter_point(self.spotlight_rig.y)
+                jx = random.randint(-10, 10)
+                jy = random.randint(-10, 10)
+                pos = init_pos[0] + jx, init_pos[1] + jy
                 color = "white"
                 direction = pygame.math.Vector2(0, 1)
-                speed = randint(50, 100)
-                particle = FloatingParticle(self.particle_group, pos, color, direction, speed)
+                speed = random.randint(50, 100)
+                particle = FloatingParticle(
+                    self.particle_group, pos, color, direction, speed
+                )
                 spotlight.particles_group.add(particle)
 
     def _update_curtains(self, dt, state):
