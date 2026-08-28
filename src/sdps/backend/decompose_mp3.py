@@ -1,6 +1,4 @@
 from mido import MidiTrack, MetaMessage
-from numba.cpython.numbers import literal_int_to_boolean
-
 from sdps.config import MP3_FILENAME
 import librosa
 import mido
@@ -19,6 +17,7 @@ class DecomposeMp3:
         self.sr = sr
         self.notesTiming = librosa.onset.onset_detect(y=self.y, sr=self.sr, units='time')
         self.spectral_centroids = librosa.feature.spectral_centroid(y=self.y, sr=self.sr)
+        self.mfcc = librosa.feature.mfcc(y=self.y, sr=self.sr)
         self.hop_length = 512
         self.bpm = self.estimate_bmp()
         self.notes_midi = {
@@ -40,9 +39,6 @@ class DecomposeMp3:
         log_s = librosa.amplitude_to_db(np.abs(stft), ref=np.max)
         onset_env = librosa.onset.onset_strength(S=log_s)
         self.onset_frames = librosa.onset.onset_detect(onset_envelope=onset_env)
-        print(len(self.notesTiming), len(self.onset_frames))
-
-
 
     def run(self):
         # Création du fichier midi
@@ -56,7 +52,7 @@ class DecomposeMp3:
 
         # Calcul du CQT sur la plage définie
         C = librosa.cqt(self.y, sr=self.sr, hop_length=self.hop_length, fmin=self.fmin, n_bins=self.n_bins)
-
+        cqt_energy = np.abs(C) ** 2
         note_list: list[note_handler.Note] = []
         for idx, t in enumerate(self.notesTiming):
             target_time = t + 0.12
@@ -92,7 +88,7 @@ class DecomposeMp3:
 
             if idx > len(self.onset_frames - 1):
                 print("ATTENTION, OUR CODE IS ASS")
-            instrument = self._determine_instrument(self.onset_frames[min(idx, len(self.onset_frames - 1))])
+            instrument = self._determine_instrument(self.onset_frames[min(idx, len(self.onset_frames - 1))], cqt_energy)
 
             for note in db:
                 note_list.append(note_handler.create(note, t, t + 1, instrument))
@@ -111,7 +107,7 @@ class DecomposeMp3:
         counter = 0
 
         for note in note_list:
-            if note.instrument == note_handler.InstrumentType.PIANO:
+            if note.instrument == note_handler.InstrumentType.TRUMPET:
                 counter += 1
 
         print("SUCCess rate is ", counter / len(note_list) * 100, "%", len(note_list))
@@ -130,22 +126,72 @@ class DecomposeMp3:
         meta_track.append(MetaMessage('time_signature', numerator=4, denominator=4, time=0))
         meta_track.append(MetaMessage('end_of_track', time=0))
 
-    def _determine_instrument(self, frame_idx) -> str:
-        first_option = self._calculate_spectral_centroid_slope(frame_idx)
+    def _determine_instrument(self, frame_idx, cqt_energy) -> str:
+        slope_evo_threshold = -20
+        mfcc_1_avg_threshold = 75
+        mfcc_2_avg_threshold = -50
+        high_ratio_thresh = 0.045,
+        low_ratio_thresh = 0.80
 
-        return first_option
+        slope_evo = self._calculate_spectral_centroid_slope(frame_idx)
+        mfcc_1_avg = self._calculate_mfcc_mean(1, frame_idx)
+        mfcc_2_avg = self._calculate_mfcc_mean(2, frame_idx)
+        low_ratio, high_ratio = self._calculate_low_high_ratio(frame_idx, cqt_energy)
+
+        pts_trumpet = 0
+        if high_ratio >= high_ratio_thresh:
+            pts_trumpet += 1
+
+        if slope_evo > slope_evo_threshold:
+            pts_trumpet += 1
+
+        if mfcc_1_avg < mfcc_1_avg_threshold:
+            pts_trumpet += 1
+
+        if mfcc_2_avg < mfcc_2_avg_threshold:
+            pts_trumpet += 1
+
+        piano_active = low_ratio > low_ratio_thresh
+        trumpet_active = pts_trumpet >= 2
+
+        if piano_active and trumpet_active:
+            return "Both"
+        elif trumpet_active:
+            return "Trumpet"
+        else:
+            return "Piano"
 
     def _calculate_spectral_centroid_slope(self, frame_idx):
-        frames_offset = 2  # 93ms per frame, 186ms neighbor frames, in total 279ms to avoid falling into trumpet's fall off on note end
+        frames_offset = 4
         neighbor_frame = frame_idx + frames_offset
-        slope_evo_threshold = -20
 
         start_centroid = self.spectral_centroids[0][frame_idx]
         end_centroid = self.spectral_centroids[0][neighbor_frame]
 
         slope = (end_centroid - start_centroid) / (neighbor_frame - frame_idx)
 
-        if slope < slope_evo_threshold:
-            return "Piano"
-        else:
-            return "Trumpet"
+        return slope
+
+    def _calculate_mfcc_mean(self, coefficient_idx, frame_idx):
+        frames_offset = 4
+
+        mfcc_start = frame_idx
+        mfcc_end = frame_idx + frames_offset
+
+        mfcc_window = self.mfcc[coefficient_idx, mfcc_start:mfcc_end]
+
+        return np.mean(mfcc_window)
+
+    def _calculate_low_high_ratio(self, frame_idx, cqt_energy):
+        frames_offset = 4
+
+        start_frame = frame_idx
+        end_frame = frame_idx + frames_offset
+
+        energies_matrix = cqt_energy[:, start_frame:end_frame]
+
+        total_freq = energies_matrix.sum(axis=0).mean()
+        lower_freq = energies_matrix[0:48].sum(axis=0).mean()
+        higher_freq = energies_matrix[48:84].sum(axis=0).mean()
+
+        return lower_freq / total_freq, higher_freq / total_freq

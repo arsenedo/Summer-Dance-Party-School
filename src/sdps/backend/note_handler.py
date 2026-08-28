@@ -13,6 +13,7 @@ class NoteType(Enum):
 class InstrumentType(Enum):
     PIANO = 0
     TRUMPET = 1
+    BOTH = 2
 
 class Note:
     def __init__(self, note: NoteType, start: int, end: int, instrument: InstrumentType, is_half_note: bool = False):
