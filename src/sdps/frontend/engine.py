@@ -16,6 +16,7 @@ from sdps.config import (
     SCREEN_WIDTH,
 )
 from sdps.frontend.components.entities.confetti_cannon import ConfettiCannon
+from sdps.frontend.components.entities.dancer.dance import DANCES
 from sdps.frontend.components.entities.dancer.generator import (
     generate_dance,
     generate_dancer,
@@ -213,7 +214,21 @@ class Engine:
                 self.spotlight_rig.turn_off(index)
 
     def _manage_dancers(self, note, turn_on):
-        pass
+        if not turn_on:
+            return
+
+        if len(self.dancer_group) >= MAX_DANCERS:
+            self.dancer_group.sprites()[0].kill()
+
+        x = random.randint(DANCER_X_PADDING, SCREEN_WIDTH - DANCER_X_PADDING)
+        floor_top = int(self.floor.y_offset + DANCER_Y_PADDING)
+        floor_bottom = int(SCREEN_HEIGHT - DANCER_Y_PADDING)
+        y = random.randint(floor_top, floor_bottom)
+
+        generate_dancer(self.dancer_group, (x, y))
+        dance = DANCES[note.index % len(DANCES)]
+        for dancer in self.dancer_group:
+            dancer.start_dance(dance)
 
     def _manage_notes_event(self, note, turn_on):
         if note.instrument == InstrumentType.PIANO:
