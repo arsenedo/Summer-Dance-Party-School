@@ -5,13 +5,22 @@ import pygame
 from sdps.backend import InstrumentType
 from sdps.config import (
     CONFETTI_PADDING_POS,
+    CURTAINS_TIME,
+    DANCER_X_PADDING,
+    DANCER_Y_PADDING,
     DARKNESS_ALPHA,
     FPS,
+    MAX_DANCERS,
     MP3_FILENAME,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
 from sdps.frontend.components.entities.confetti_cannon import ConfettiCannon
+from sdps.frontend.components.entities.dancer.dance import DANCES
+from sdps.frontend.components.entities.dancer.generator import (
+    generate_dance,
+    generate_dancer,
+)
 from sdps.frontend.components.entities.particles import (
     FloatingParticle,
     Particle,
@@ -54,6 +63,7 @@ class Engine:
         self.active_note_counts = {}
 
         self.particle_group = pygame.sprite.Group()
+        self.dancer_group = pygame.sprite.Group()
         self.floating_particle_timer = pygame.event.custom_type()
         pygame.time.set_timer(self.floating_particle_timer, 10)
 
@@ -120,6 +130,9 @@ class Engine:
             self.floor.draw(self.screen)
             self.spotlight_rig.draw()
 
+            self.dancer_group.update(self.dt)
+            self.dancer_group.draw(self.screen)
+
             self.darkness.fill((0, 0, 0, DARKNESS_ALPHA))
             self.spotlight_rig.apply_darkness(self.darkness)
             self.screen.blit(self.darkness, (0, 0))
@@ -164,6 +177,10 @@ class Engine:
                     y = (self.right_cannon.y - self.right_cannon.body_size
                          - self.right_cannon.barrel_length / 2)
                     self._shoot_confetti(1000, (x, y), -1)
+                elif key == pygame.K_SPACE:
+                    self._spawn_dancer()
+                elif key == pygame.K_a:
+                    self._start_dance()
             elif event.type == self.floating_particle_timer:
                 self._spawn_floating_particle()
             elif event.type == pygame.QUIT:
@@ -197,7 +214,21 @@ class Engine:
                 self.spotlight_rig.turn_off(index)
 
     def _manage_dancers(self, note, turn_on):
-        pass
+        if not turn_on:
+            return
+
+        if len(self.dancer_group) >= MAX_DANCERS:
+            self.dancer_group.sprites()[0].kill()
+
+        x = random.randint(DANCER_X_PADDING, SCREEN_WIDTH - DANCER_X_PADDING)
+        floor_top = int(self.floor.y_offset + DANCER_Y_PADDING)
+        floor_bottom = int(SCREEN_HEIGHT - DANCER_Y_PADDING)
+        y = random.randint(floor_top, floor_bottom)
+
+        generate_dancer(self.dancer_group, (x, y))
+        dance = DANCES[note.index % len(DANCES)]
+        for dancer in self.dancer_group:
+            dancer.start_dance(dance)
 
     def _manage_notes_event(self, note, turn_on):
         if note.instrument == InstrumentType.PIANO:
@@ -220,6 +251,21 @@ class Engine:
                 break
             self._manage_notes_event(note, turn_on)
             self.next_event_index += 1
+
+    def _spawn_dancer(self):
+        if len(self.dancer_group) >= MAX_DANCERS:
+            self.dancer_group.sprites()[0].kill()
+
+        x = random.randint(DANCER_X_PADDING, SCREEN_WIDTH - DANCER_X_PADDING)
+        floor_top = int(self.floor.y_offset + DANCER_Y_PADDING)
+        floor_bottom = int(SCREEN_HEIGHT - DANCER_Y_PADDING)
+        y = random.randint(floor_top, floor_bottom)
+        generate_dancer(self.dancer_group, (x, y))
+
+    def _start_dance(self):
+        dance = generate_dance()
+        for dancer in self.dancer_group:
+            dancer.start_dance(dance)
 
     def _shoot_confetti(self, n: int, pos: tuple[int, int], side: int):
         """shoot confettis from a position
