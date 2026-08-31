@@ -231,10 +231,23 @@ class Engine:
             dancer.start_dance(dance)
 
     def _manage_notes_event(self, note, turn_on):
-        if note.instrument == InstrumentType.PIANO:
+        if note.instrument == InstrumentType.PIANO or note.instrument == InstrumentType.BOTH:
             self._manage_lights(note, turn_on)
-        else:
+        if note.instrument == InstrumentType.TRUMPET or note.instrument == InstrumentType.BOTH:
             self._manage_dancers(note, turn_on)
+        if note.instrument == InstrumentType.BOTH:
+            # left cannon shot
+            x = self.left_cannon.x + self.left_cannon.body_size / 2
+            y = (self.left_cannon.y - self.left_cannon.body_size
+                 - self.left_cannon.barrel_length / 2)
+            self._shoot_confetti(100, (x, y), 1)
+
+            # right cannon shot
+            x = self.right_cannon.x - self.right_cannon.body_size / 2
+            y = (self.right_cannon.y - self.right_cannon.body_size
+                 - self.right_cannon.barrel_length / 2)
+            self._shoot_confetti(100, (x, y), -1)
+
 
     def _build_note_events(self, note_list):
         events = []

@@ -1,3 +1,5 @@
+from itertools import count
+
 from mido import MidiTrack, MetaMessage
 from sdps.config import MP3_FILENAME
 import librosa
@@ -51,9 +53,10 @@ class DecomposeMp3:
         last_message = 0.0
 
         # Calcul du CQT sur la plage définie
-        C = librosa.cqt(self.y, sr=self.sr, hop_length=self.hop_length, fmin=self.fmin, n_bins=self.n_bins)
+        C = librosa.cqt(self.y, sr=self.sr)
         cqt_energy = np.abs(C) ** 2
         note_list: list[note_handler.Note] = []
+
         for idx, t in enumerate(self.notesTiming):
             target_time = t + 0.12
 
@@ -86,9 +89,11 @@ class DecomposeMp3:
             last_message = t
             first_note = True
 
-            if idx > len(self.onset_frames - 1):
+            if idx > self.onset_frames.shape[0] - 1:
                 print("ATTENTION, OUR CODE IS ASS")
-            instrument = self._determine_instrument(self.onset_frames[min(idx, len(self.onset_frames - 1))], cqt_energy)
+
+            frame_idx = min(idx, self.onset_frames.shape[0] - 1)
+            instrument = self._determine_instrument(self.onset_frames[frame_idx], cqt_energy)
 
             for note in db:
                 note_list.append(note_handler.create(note, t, t + 1, instrument))
@@ -104,13 +109,11 @@ class DecomposeMp3:
         midi_fn = "new_song.mid"
         mid.save(midi_fn)
 
-        counter = 0
-
+        count = 0
         for note in note_list:
             if note.instrument == note_handler.InstrumentType.TRUMPET:
-                counter += 1
-
-        print("SUCCess rate is ", counter / len(note_list) * 100, "%", len(note_list))
+                count += 1
+        print(count/len(note_list)*100, "%")
 
         return note_list
 
@@ -127,37 +130,41 @@ class DecomposeMp3:
         meta_track.append(MetaMessage('end_of_track', time=0))
 
     def _determine_instrument(self, frame_idx, cqt_energy) -> str:
-        slope_evo_threshold = -20
-        mfcc_1_avg_threshold = 75
-        mfcc_2_avg_threshold = -50
-        high_ratio_thresh = 0.045,
-        low_ratio_thresh = 0.80
-
         slope_evo = self._calculate_spectral_centroid_slope(frame_idx)
         mfcc_1_avg = self._calculate_mfcc_mean(1, frame_idx)
         mfcc_2_avg = self._calculate_mfcc_mean(2, frame_idx)
         low_ratio, high_ratio = self._calculate_low_high_ratio(frame_idx, cqt_energy)
 
         pts_trumpet = 0
-        if high_ratio >= high_ratio_thresh:
+        if mfcc_2_avg <= -60.0:
+            pts_trumpet += 2
+        if low_ratio <= 0.1:
+            pts_trumpet += 1
+        if slope_evo > -10.0:
             pts_trumpet += 1
 
-        if slope_evo > slope_evo_threshold:
-            pts_trumpet += 1
+        pts_piano = 0
+        if mfcc_2_avg > -60.0:
+            pts_piano += 2
+        if low_ratio > 0.1:
+            pts_piano += 1
+        if slope_evo <= -10.0:
+            pts_piano += 1
 
-        if mfcc_1_avg < mfcc_1_avg_threshold:
-            pts_trumpet += 1
-
-        if mfcc_2_avg < mfcc_2_avg_threshold:
-            pts_trumpet += 1
-
-        piano_active = low_ratio > low_ratio_thresh
-        trumpet_active = pts_trumpet >= 2
+        trumpet_active = (pts_trumpet >= 3) or (mfcc_2_avg <= -50.0 and high_ratio > 0.85)
+        piano_active = (pts_piano >= 3) or (low_ratio > 0.08)
 
         if piano_active and trumpet_active:
-            return "Both"
+            if mfcc_2_avg <= -85.0 and low_ratio < 0.03:
+                return "Trumpet"
+            elif mfcc_2_avg >= -35.0 and low_ratio > 0.30:
+                return "Piano"
+            else:
+                return "Both"
         elif trumpet_active:
             return "Trumpet"
+        elif piano_active:
+            return "Piano"
         else:
             return "Piano"
 
@@ -191,7 +198,7 @@ class DecomposeMp3:
         energies_matrix = cqt_energy[:, start_frame:end_frame]
 
         total_freq = energies_matrix.sum(axis=0).mean()
-        lower_freq = energies_matrix[0:48].sum(axis=0).mean()
-        higher_freq = energies_matrix[48:84].sum(axis=0).mean()
+        lower_freq = energies_matrix[0:36].sum(axis=0).mean()
+        higher_freq = energies_matrix[36:96].sum(axis=0).mean()
 
         return lower_freq / total_freq, higher_freq / total_freq
