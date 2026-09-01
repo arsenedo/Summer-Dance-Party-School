@@ -114,7 +114,7 @@ class Engine:
                     if curtains_moove :
                         time = random.randrange(25, 70, 1)
                     else:
-                        time = random.randrange(50, 250, 1)
+                        time = random.randrange(25, 130, 1)
                 if not curtains_moove and self.opening:
                     self._update_curtains(self.dt, "open")
                 elif self.music_ended:
