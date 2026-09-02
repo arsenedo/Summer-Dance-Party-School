@@ -60,6 +60,7 @@ class Engine:
         self.note_events = self._build_note_events(note_list)
         self.next_event_index = 0
         self.active_note_counts = {}
+        self.active_dance_count = 0
 
         self.particle_group = pygame.sprite.Group()
         self.dancer_group = pygame.sprite.Group()
@@ -214,7 +215,13 @@ class Engine:
 
     def _manage_dancers(self, note, turn_on):
         if not turn_on:
+            self.active_dance_count = max(0, self.active_dance_count - 1)
+            if self.active_dance_count == 0:
+                for dancer in self.dancer_group:
+                    dancer.stop_dance()
             return
+
+        self.active_dance_count += 1
 
         if len(self.dancer_group) >= MAX_DANCERS:
             self.dancer_group.sprites()[0].kill()
@@ -233,6 +240,7 @@ class Engine:
     def _manage_notes_event(self, note, turn_on):
         if note.instrument == InstrumentType.PIANO or note.instrument == InstrumentType.BOTH:
             self._manage_lights(note, turn_on)
+
         if note.instrument == InstrumentType.TRUMPET or note.instrument == InstrumentType.BOTH:
             self._manage_dancers(note, turn_on)
         if note.instrument == InstrumentType.BOTH:
