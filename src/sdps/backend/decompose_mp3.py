@@ -45,16 +45,22 @@ class DecomposeMp3:
         mid = mido.MidiFile()
         self.create_meta_track(mid)
 
-        track = mido.MidiTrack()
-        mid.tracks.append(track)
+        piano_track = mido.MidiTrack()
+        piano_track.append(MetaMessage("track_name", name="Piano", time=0))
+        mid.tracks.append(piano_track)
+
+        trumpet_track = mido.MidiTrack()
+        trumpet_track.append(MetaMessage("track_name", name="Trumpet", time=0))
+        mid.tracks.append(trumpet_track)
+
         tempo = mido.bpm2tempo(self.bpm, time_signature=(4, 4))
-        last_message = 0.0
 
         # Calcul du CQT sur la plage définie
         C = librosa.cqt(self.y, sr=self.sr, hop_length=self.hop_length, fmin=self.fmin, n_bins=self.n_bins)
         cqt_energy = np.abs(C) ** 2
         note_list: list[note_handler.Note] = []
-        midi_events = []
+        piano_midi_events = []
+        trumpet_midi_events = []
         for idx, t in enumerate(self.notesTiming):
             target_time = t + 0.12
 
@@ -114,17 +120,33 @@ class DecomposeMp3:
 
             for note, time_end in db.items():
                 note_list.append(note_handler.create(note, t, time_end, instrument))
-                midi_events.append((t, "note_on", note))
-                midi_events.append((time_end, "note_off", note))
+                if instrument == "Piano" or instrument == "Both":
+                    piano_midi_events.append((t, "note_on", note))
+                    piano_midi_events.append((time_end, "note_off", note))
 
-        midi_events.sort(key=lambda event: event[0])
+                if instrument == "Trumpet" or instrument == "Both":
+                    trumpet_midi_events.append((t, "note_on", note))
+                    trumpet_midi_events.append((time_end, "note_off", note))
 
-        for event_time, event_type, note in midi_events:
+        piano_midi_events.sort(key=lambda event: event[0])
+        trumpet_midi_events.sort(key=lambda event: event[0])
+
+        last_message = 0.0
+        for event_time, event_type, note in piano_midi_events:
             delta = event_time - last_message
             ticks = int(mido.second2tick(delta, mid.ticks_per_beat, tempo))
             message = mido.Message(event_type, note=self.notes_midi[note],
                                    velocity=64, time=ticks)
-            track.append(message)
+            piano_track.append(message)
+            last_message = event_time
+
+        last_message = 0.0
+        for event_time, event_type, note in trumpet_midi_events:
+            delta = event_time - last_message
+            ticks = int(mido.second2tick(delta, mid.ticks_per_beat, tempo))
+            message = mido.Message(event_type, note=self.notes_midi[note],
+                                   velocity=64, time=ticks)
+            trumpet_track.append(message)
             last_message = event_time
 
         midi_fn = "new_song.mid"

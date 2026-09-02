@@ -88,6 +88,11 @@ class Dancer(pygame.sprite.Sprite):
         self.dance_time = 0.0
         self.pose_index = 0
 
+    def stop_dance(self):
+        self.dance = None
+        self.apply_pose(IDLE_POSE)
+        self.render()
+
     def update(self, dt):
         if self.dance is None:
             return
