@@ -54,6 +54,7 @@ class DecomposeMp3:
         C = librosa.cqt(self.y, sr=self.sr, hop_length=self.hop_length, fmin=self.fmin, n_bins=self.n_bins)
         cqt_energy = np.abs(C) ** 2
         note_list: list[note_handler.Note] = []
+        midi_events = []
         for idx, t in enumerate(self.notesTiming):
             target_time = t + 0.12
 
@@ -65,7 +66,7 @@ class DecomposeMp3:
             # Détection des pic locaux
             peaks = scipy.signal.find_peaks(specific_db)
 
-            db = set([])
+            db = {}
 
             # Recherche de l'id de la valeur max
             max_id = specific_db.argmax()
@@ -75,31 +76,56 @@ class DecomposeMp3:
             for p in peaks[0]:
                 if specific_db[p] > (specific_db[
                                          max_id] / 5):  # On garde les valeurs plus hautes que 20% de la note jouée la plus forte
-                    db.add(str(self.notes[p]).translate(str.maketrans("", "",
-                                                                    "0123456789-")))  # avec maketrans on supprimes les chiffres (On a pas besoin de garder l'octave)
+                    note_name = str(self.notes[p]).translate(str.maketrans("", "",
+                                                                          "0123456789-"))
+                    start_power = np.abs(C[p, frame_index])
+                    min_power = start_power / 5
+                    previous_power = start_power
+                    power_has_dropped = False
+                    frame_end = frame_index + 1
+
+                    while frame_end < C.shape[1]:
+                        current_power = np.abs(C[p, frame_end])
+
+                        if current_power < min_power:
+                            break
+
+                        if current_power < previous_power:
+                            power_has_dropped = True
+
+                        power_difference = current_power - previous_power
+                        if power_has_dropped and power_difference > start_power / 5:
+                            break
+
+                        previous_power = current_power
+                        frame_end += 1
+
+                    time_end = librosa.frames_to_time(frame_end, sr=self.sr,
+                                                       hop_length=self.hop_length)
+
+                    if note_name not in db or time_end > db[note_name]:
+                        db[note_name] = time_end
             # print("notes trouvées = ")
             # print(set(db))
-
-            delta = t - last_message
-            ticks = int(mido.second2tick(delta, mid.ticks_per_beat, tempo)) - (100 if len(track) > 0 else 0)
-
-            last_message = t
-            first_note = True
 
             if idx > len(self.onset_frames - 1):
                 print("ATTENTION, OUR CODE IS ASS")
             instrument = self._determine_instrument(self.onset_frames[min(idx, len(self.onset_frames - 1))], cqt_energy)
 
-            for note in db:
-                note_list.append(note_handler.create(note, t, t + 1, instrument))
-                if first_note:
-                    track.append(mido.Message('note_on', note=self.notes_midi[note], velocity=64, time=ticks))
-                    first_note = False
-                else:
-                    track.append(mido.Message('note_on', note=self.notes_midi[note], velocity=64, time=0))
+            for note, time_end in db.items():
+                note_list.append(note_handler.create(note, t, time_end, instrument))
+                midi_events.append((t, "note_on", note))
+                midi_events.append((time_end, "note_off", note))
 
-            for idx, note in enumerate(db):
-                track.append(mido.Message("note_off", note=self.notes_midi[note], velocity=64, time=(100 if idx == 0 else 0)))
+        midi_events.sort(key=lambda event: event[0])
+
+        for event_time, event_type, note in midi_events:
+            delta = event_time - last_message
+            ticks = int(mido.second2tick(delta, mid.ticks_per_beat, tempo))
+            message = mido.Message(event_type, note=self.notes_midi[note],
+                                   velocity=64, time=ticks)
+            track.append(message)
+            last_message = event_time
 
         midi_fn = "new_song.mid"
         mid.save(midi_fn)
