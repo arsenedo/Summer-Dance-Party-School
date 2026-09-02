@@ -5,7 +5,6 @@ import pygame
 from sdps.backend import InstrumentType
 from sdps.config import (
     CONFETTI_PADDING_POS,
-    CURTAINS_TIME,
     DANCER_X_PADDING,
     DANCER_Y_PADDING,
     DARKNESS_ALPHA,
@@ -221,8 +220,9 @@ class Engine:
             self.dancer_group.sprites()[0].kill()
 
         x = random.randint(DANCER_X_PADDING, SCREEN_WIDTH - DANCER_X_PADDING)
-        floor_top = int(self.floor.y_offset + DANCER_Y_PADDING)
-        floor_bottom = int(SCREEN_HEIGHT - DANCER_Y_PADDING)
+        dancer_y_padding = min(DANCER_Y_PADDING, int(self.floor.height / 3))
+        floor_top = int(self.floor.y_offset + dancer_y_padding)
+        floor_bottom = int(SCREEN_HEIGHT - dancer_y_padding)
         y = random.randint(floor_top, floor_bottom)
 
         generate_dancer(self.dancer_group, (x, y))
@@ -257,8 +257,9 @@ class Engine:
             self.dancer_group.sprites()[0].kill()
 
         x = random.randint(DANCER_X_PADDING, SCREEN_WIDTH - DANCER_X_PADDING)
-        floor_top = int(self.floor.y_offset + DANCER_Y_PADDING)
-        floor_bottom = int(SCREEN_HEIGHT - DANCER_Y_PADDING)
+        dancer_y_padding = min(DANCER_Y_PADDING, int(self.floor.height / 3))
+        floor_top = int(self.floor.y_offset + dancer_y_padding)
+        floor_bottom = int(SCREEN_HEIGHT - dancer_y_padding)
         y = random.randint(floor_top, floor_bottom)
         generate_dancer(self.dancer_group, (x, y))
 
@@ -305,7 +306,10 @@ class Engine:
 
         if state == "open" and self.curtains_offset < self.max_curtain_offset:
             self.curtains.move_curtains((-dt_adjusted_speed, dt_adjusted_speed))
-            move = min(dt_adjusted_speed, self.max_curtain_offset - self.curtains_offset)
+            move = min(
+                dt_adjusted_speed,
+                self.max_curtain_offset - self.curtains_offset,
+            )
             self.curtains.move_curtains((-move, move))
             self.curtains_offset += move
 
